@@ -5,7 +5,8 @@ A non-blocking stepper motor control library for the ESP32 using MCPWM. This lib
 The library is inspired by the awesome [FastAccelStepper](https://github.com/gin66/FastAccelStepper) library. 
 The FastAccelStepper is perfectly suited for applications which require smooth position/velocity trajectories. 
 For my application, see [DIY-Sim-Racing-FFB-Pedal](https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal), acceleration patterns aren't needed, as the trajectories are intriniscly smoothed by the servo control-loop. 
-Instead, the focus was to reduce the libraries complexity by removing the trajectory/rampl planner and focus on faster update intervals for super-fast control loops. In other words, the library will tell the servo its target position via the pulse/dir interface as fast as the servos interface will allow. 
+Instead, the focus was to reduce the libraries complexity by removing the trajectory/ramp planner and focus on faster update intervals for super-fast control loops. 
+In other words, the library will tell the servo its target position via the pulse/dir interface as fast as the servos interface will allow. 
 For the [iSV57 servo (affiliate link)](https://www.omc-stepperonline.com/de/nema-23-integrierter-easy-servo-motor-130w-3000rpm-0-45nm-63-73oz-in-20-50vdc-buerstenloser-dc-servomotor-kurze-welle-isv57t-130s?tracking=6721c5865911c) for instance, the pulse/dir interface allows pulses of up to 300kHz.
 
 
