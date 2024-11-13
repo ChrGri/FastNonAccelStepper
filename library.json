@@ -1,0 +1,12 @@
+{
+  "name": "FastNonAccelStepper",
+  "version": "0.0.1",
+  "description": "A high speed stepper library for ESP32 for non blocking, non-acceleration movement using MCPWM.",
+  "keywords": ["arduino", "esp32", "stepper"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ChrGri/FastNonAccelStepper.git"
+  },
+  "frameworks": ["arduino"],
+  "platforms": ["espressif32", "atmelavr"]
+}
