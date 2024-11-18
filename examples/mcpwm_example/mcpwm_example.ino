@@ -1,23 +1,41 @@
+/****************************************************************************************************************/
+/*                                                                                                              */
+/*                      Includes                                                                                 */
+/*                                                                                                              */
+/****************************************************************************************************************/
 #include <driver/mcpwm.h>
 #include <driver/pcnt.h>
 
-#define PWM_FREQUENCY 30000   // 300 Hz for testing
+
+
+
+/****************************************************************************************************************/
+/*                                                                                                              */
+/*                      Defines                                                                                 */
+/*                                                                                                              */
+/****************************************************************************************************************/
+
+#define MAX_SPEED_IN_HZ 300000
+
+
+#define MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE 20000
+#define PWM_FREQUENCY (int32_t)30000   // 300 Hz for testing
 #define PWM_DUTY_CYCLE 50.0 // 50% duty cycle
 #define PWM_GPIO_PIN 18     // PWM output pin
 #define PCNT_INPUT_PIN PWM_GPIO_PIN //25   // Separate PCNT input pin
 #define PCNT_DIR_GPIO GPIO_NUM_20    // GPIO 20 for direction control
 
-#define PCNT_UNIT PCNT_UNIT_0 // PCNT unit to use
-#define PCNT_MIN_MAX_THRESHOLD_UNIT_0 (int16_t)6400
+
+#define PCNT_MIN_MAX_THRESHOLD_UNIT_0 (int16_t)INT16_MAX//6400
 #define PCNT_MIN_MAX_THRESHOLD_UNIT_1 (int16_t)300
 
-bool pwmEnabled = true; // Flag to toggle PWM output
 
 
+
+volatile int dynamic_target_pos_i322 = PCNT_MIN_MAX_THRESHOLD_UNIT_0;
 portMUX_TYPE timer_mux = portMUX_INITIALIZER_UNLOCKED;
-
-
 volatile int overflowCount = 0; // Variable to track overflows
+
 
 
 // Queue to handle pulse counter events
@@ -30,6 +48,35 @@ typedef struct {
   unsigned long timeStamp; // Timestamp of the interrupt
 } pcnt_evt_t;
 
+
+
+/****************************************************************************************************************/
+/*                                                                                                              */
+/*                      MCPWM related function                                                                  */
+/*                                                                                                              */
+/****************************************************************************************************************/
+void init_mcpwm(uint8_t stepPin_, uint8_t dirPin)
+{
+  // Configure the MCPWM unit with frequency and duty cycle
+  mcpwm_config_t pwmConfig;
+  pwmConfig.frequency = 200000;//PWM_FREQUENCY;         // Set frequency to 300 Hz
+  pwmConfig.cmpr_a = PWM_DUTY_CYCLE;           // Set duty cycle to 50%
+  pwmConfig.cmpr_b = 0.0;                      // Unused in this example
+  pwmConfig.counter_mode = MCPWM_UP_COUNTER;   // Count up mode
+  pwmConfig.duty_mode = MCPWM_DUTY_MODE_0;     // Duty mode 0
+
+  // Initialize MCPWM unit 0, timer 0
+  mcpwm_init(MCPWM_UNIT_0, MCPWM_TIMER_0, &pwmConfig);
+} 
+
+
+
+
+/****************************************************************************************************************/
+/*                                                                                                              */
+/*                      Multiturn PCNT related functios                                                         */
+/*                                                                                                              */
+/****************************************************************************************************************/
 
 /* Decode what PCNT's unit originated an interrupt
  * and pass this information together with the event type
@@ -47,10 +94,10 @@ static void IRAM_ATTR pcnt_intr_handler(void *arg) {
   portBASE_TYPE HPTaskAwoken = pdFALSE;
 
   // Retrieve the event status for the current PCNT unit
-  pcnt_get_event_status(PCNT_UNIT, &status);
+  pcnt_get_event_status(PCNT_UNIT_0, &status);
 
   if (status & PCNT_EVT_H_LIM) {
-    evt.unit = PCNT_UNIT;
+    evt.unit = PCNT_UNIT_0;
     evt.status = PCNT_EVT_H_LIM;
     evt.timeStamp = millis();
 
@@ -64,7 +111,7 @@ static void IRAM_ATTR pcnt_intr_handler(void *arg) {
   }
 
   if (status & PCNT_EVT_L_LIM) {
-    evt.unit = PCNT_UNIT;
+    evt.unit = PCNT_UNIT_0;
     evt.status = PCNT_EVT_L_LIM;
     evt.timeStamp = millis();
 
@@ -86,171 +133,317 @@ static void IRAM_ATTR pcnt_intr_handler(void *arg) {
 }
 
 
-
-void setup() {
-  Serial.begin(115200);
-
-  
-
-  // Configure the MCPWM unit with frequency and duty cycle
-  mcpwm_config_t pwmConfig;
-  pwmConfig.frequency = PWM_FREQUENCY;         // Set frequency to 300 Hz
-  pwmConfig.cmpr_a = PWM_DUTY_CYCLE;           // Set duty cycle to 50%
-  pwmConfig.cmpr_b = 0.0;                      // Unused in this example
-  pwmConfig.counter_mode = MCPWM_UP_COUNTER;   // Count up mode
-  pwmConfig.duty_mode = MCPWM_DUTY_MODE_0;     // Duty mode 0
-
-  // Initialize MCPWM unit 0, timer 0
-  mcpwm_init(MCPWM_UNIT_0, MCPWM_TIMER_0, &pwmConfig);
-
+void init_pcnt_multiturn(uint8_t stepPin_, uint8_t dirPin)
+{
   // Initialize the PCNT module: #0
   pcnt_config_t pcntConfig_0;
-  pcntConfig_0.pulse_gpio_num = PCNT_INPUT_PIN;  // PCNT input pin
-  pcntConfig_0.ctrl_gpio_num = PCNT_DIR_GPIO; // No control pin
+  pcntConfig_0.pulse_gpio_num = stepPin_;  // PCNT input pin
+  pcntConfig_0.ctrl_gpio_num = dirPin; // No control pin
   pcntConfig_0.channel = PCNT_CHANNEL_0;         // Channel 0
   pcntConfig_0.unit = PCNT_UNIT_0;                 // PCNT unit
   pcntConfig_0.pos_mode = PCNT_COUNT_INC;        // Count rising edges
   pcntConfig_0.neg_mode = PCNT_COUNT_DIS;    // Don't count falling edges
-  pcntConfig_0.lctrl_mode = PCNT_MODE_REVERSE;      // Keep the counter mode
+  pcntConfig_0.lctrl_mode = PCNT_MODE_REVERSE;      // Reverse the counter mode
   pcntConfig_0.hctrl_mode = PCNT_MODE_KEEP;      // Keep the counter mode
   pcntConfig_0.counter_h_lim = PCNT_MIN_MAX_THRESHOLD_UNIT_0;//INT16_MAX;        // High limit
   pcntConfig_0.counter_l_lim = -PCNT_MIN_MAX_THRESHOLD_UNIT_0;//INT16_MIN;        // Low limit
+  
+  // enable overflow counter
+  // See compensate overflow loss
+  //pcnt_unit_config_t::accum_count
 
-
-  // Initialize the PCNT module: #1
-  /*pcnt_config_t pcntConfig_1;
-  pcntConfig_1.pulse_gpio_num = PCNT_INPUT_PIN;  // PCNT input pin
-  pcntConfig_1.ctrl_gpio_num = PCNT_PIN_NOT_USED; // No control pin
-  pcntConfig_1.channel = PCNT_CHANNEL_0;         // Channel 0
-  pcntConfig_1.unit = PCNT_UNIT_1;                 // PCNT unit
-  pcntConfig_1.pos_mode = PCNT_COUNT_INC;        // Count rising edges
-  pcntConfig_1.neg_mode = PCNT_COUNT_DIS;    // Don't count falling edges
-  pcntConfig_1.lctrl_mode = PCNT_MODE_KEEP;      // Keep the counter mode
-  pcntConfig_1.hctrl_mode = PCNT_MODE_KEEP;      // Keep the counter mode
-  pcntConfig_1.counter_h_lim = PCNT_MIN_MAX_THRESHOLD_UNIT_1;//INT16_MAX;        // High limit
-  pcntConfig_1.counter_l_lim = -PCNT_MIN_MAX_THRESHOLD_UNIT_1;//INT16_MIN;        // Low limit
-
-  */
   esp_err_t pcntInitStatus = pcnt_unit_config(&pcntConfig_0);
-  //pcntInitStatus = pcnt_unit_config(&pcntConfig_1);
-
-
   if (pcntInitStatus != ESP_OK) {
     Serial.printf("PCNT init failed with error: %d\n", pcntInitStatus);
   } else {
     Serial.println("PCNT initialized successfully");
   }
 
-
-  
-
-
-  
   /* Configure and enable the input filter */
   pcnt_set_filter_value(PCNT_UNIT_0, 100);
   pcnt_filter_enable(PCNT_UNIT_0);
 
-  //pcnt_set_filter_value(PCNT_UNIT_1, 100);
-  //pcnt_filter_enable(PCNT_UNIT_1);
+  // Activate pcnt
+  pcnt_counter_clear(PCNT_UNIT_0);
+  pcnt_counter_resume(PCNT_UNIT_0);
 
+  // PCNT event
+  pcnt_event_enable(PCNT_UNIT_0, PCNT_EVT_H_LIM);
+  pcnt_event_enable(PCNT_UNIT_0, PCNT_EVT_L_LIM);
+
+  // Register ISR handler and enable interrupts for PCNT unit
+  pcnt_isr_service_install(0); // Install the PCNT interrupt service
+  pcnt_isr_handler_add(PCNT_UNIT_0, pcnt_intr_handler, NULL); // Attach the ISR
 
   // Set counter value to zero
   pcnt_counter_clear(PCNT_UNIT_0);
-  //pcnt_counter_clear(PCNT_UNIT_1);
 
-
-  
   // Enable the PCNT unit
   pcnt_counter_resume(PCNT_UNIT_0);
-  //pcnt_counter_resume(PCNT_UNIT_1);
 
-
-
-
-  // PCNT event
-  pcnt_event_enable(PCNT_UNIT, PCNT_EVT_H_LIM);
-  pcnt_event_enable(PCNT_UNIT, PCNT_EVT_L_LIM);
-
-  pcnt_isr_service_install(0); // Install the PCNT interrupt service
-  pcnt_isr_handler_add(PCNT_UNIT, pcnt_intr_handler, NULL); // Attach the ISR
-
-  
-  /* Register ISR handler and enable interrupts for PCNT unit */
-  //pcnt_isr_register(pcnt_intr_handler, NULL, 0, NULL);
-  //pcnt_intr_enable(PCNT_UNIT);
-
-  
-
-  
-
-
-  digitalWrite(PCNT_INPUT_PIN, LOW);
-  digitalWrite(PCNT_DIR_GPIO, LOW);
-  pinMode(PCNT_INPUT_PIN, OUTPUT);
-  pinMode(PCNT_DIR_GPIO, OUTPUT);
-
-
-
-  // Initialize the MCPWM GPIO pin
-  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0A, PWM_GPIO_PIN);
-  
-
-  gpio_iomux_in(PWM_GPIO_PIN, PCNT_SIG_CH0_IN0_IDX);
-
+  pcnt_counter_clear(PCNT_UNIT_0);
 
   // Create queue for PCNT events
   pcnt_evt_queue = xQueueCreate(10, sizeof(pcnt_evt_t));
+}
 
-  pcnt_counter_clear(PCNT_UNIT);
+long readCurrentPosition()
+{
+  int16_t pulseCount_0 = 0;
+  esp_err_t pcntReadStatus_0 = pcnt_get_counter_value(PCNT_UNIT_0, &pulseCount_0);
+  long totalPulseCount = (overflowCount * PCNT_MIN_MAX_THRESHOLD_UNIT_0) + pulseCount_0;
+  return totalPulseCount;
+}
+
+
+
+/****************************************************************************************************************/
+/*                                                                                                              */
+/*                      Control PCNT related functios                                                           */
+/*                                                                                                              */
+/****************************************************************************************************************/
+
+// ISR to handle PCNT events
+static void IRAM_ATTR pcnt_controll_intr_handler(void *arg) {
+
+  // When limits are met --> interrupt fires --> stop MCPWM
+  uint32_t status;
+  // Retrieve the event status for the current PCNT unit
+  pcnt_get_event_status(PCNT_UNIT_1, &status);
+
+  // stop the MCPWM output when target was hit
+  if (status & PCNT_EVT_H_LIM) {
+    mcpwm_stop(MCPWM_UNIT_0, MCPWM_TIMER_0);  
+  }
+  if (status & PCNT_EVT_L_LIM) {
+    mcpwm_stop(MCPWM_UNIT_0, MCPWM_TIMER_0);  
+  }
+
+}
+
+
+void init_pcnt_control(uint8_t stepPin_, uint8_t dirPin)
+{
+  // Initialize the PCNT module: #0
+  pcnt_config_t pcntConfig_0;
+  pcntConfig_0.pulse_gpio_num = stepPin_;  // PCNT input pin
+  pcntConfig_0.ctrl_gpio_num = dirPin; // No control pin
+  pcntConfig_0.channel = PCNT_CHANNEL_0;         // Channel 0
+  pcntConfig_0.unit = PCNT_UNIT_1;                 // PCNT unit
+  pcntConfig_0.pos_mode = PCNT_COUNT_INC;        // Count rising edges
+  pcntConfig_0.neg_mode = PCNT_COUNT_DIS;    // Don't count falling edges
+  pcntConfig_0.lctrl_mode = PCNT_MODE_REVERSE;      // Keep the counter mode
+  pcntConfig_0.hctrl_mode = PCNT_MODE_KEEP;      // Keep the counter mode
+  pcntConfig_0.counter_h_lim = dynamic_target_pos_i322;//INT16_MAX;        // High limit
+  pcntConfig_0.counter_l_lim = -dynamic_target_pos_i322;//INT16_MIN;        // Low limit
+
+  esp_err_t pcntInitStatus = pcnt_unit_config(&pcntConfig_0);
+  if (pcntInitStatus != ESP_OK) {
+    Serial.printf("PCNT init failed with error: %d\n", pcntInitStatus);
+  } else {
+    Serial.println("PCNT initialized successfully");
+  }
+
+  /* Configure and enable the input filter */
+  pcnt_set_filter_value(PCNT_UNIT_1, 100);
+  pcnt_filter_enable(PCNT_UNIT_1);
+
+  // Activate pcnt
+  pcnt_counter_clear(PCNT_UNIT_1);
+  pcnt_counter_resume(PCNT_UNIT_1);
+
+  // PCNT event
+  pcnt_event_enable(PCNT_UNIT_1, PCNT_EVT_H_LIM);
+  pcnt_event_enable(PCNT_UNIT_1, PCNT_EVT_L_LIM);
+
+  // Register ISR handler and enable interrupts for PCNT unit
+  pcnt_isr_service_install(0); // Install the PCNT interrupt service
+  pcnt_isr_handler_add(PCNT_UNIT_1, pcnt_controll_intr_handler, NULL); // Attach the ISR
+
+  // Set counter value to zero
+  pcnt_counter_clear(PCNT_UNIT_1);
+
+  // Enable the PCNT unit
+  pcnt_counter_resume(PCNT_UNIT_1);
+
+  //pcnt_counter_clear(PCNT_UNIT_1);
+
+  // Create queue for PCNT events
+  pcnt_evt_queue = xQueueCreate(10, sizeof(pcnt_evt_t));
 
 }
 
 
 
-void loop() {
-  // Toggle the MCPWM output every second
-  if (pwmEnabled) {
-    mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0); // Start the PWM
-    //Serial.println("PWM Enabled");
-  } else {
-    mcpwm_stop(MCPWM_UNIT_0, MCPWM_TIMER_0);  // Stop the PWM
-    //Serial.println("PWM Disabled");
+
+void updateTargetPosition(long targetPos_) {
+
+  // Calculate the requested position change
+  long curPos_ = readCurrentPosition();
+  long requestedPositionChange_ = targetPos_ - curPos_;
+  int16_t requestedPositionChange_clamped = constrain(requestedPositionChange_, -MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE, MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE);
+
+
+  // Stop the MCPWM output to avoid conflicts while reconfiguring
+  mcpwm_stop(MCPWM_UNIT_0, MCPWM_TIMER_0);  
+
+  //if (requestedPositionChange_ != 0)
+  if (abs(requestedPositionChange_clamped) > 0)
+  {
+    
+    // Determine new cyclic limits
+    int16_t newHighLimit = abs(requestedPositionChange_clamped);
+    int16_t newLowLimit = -abs(requestedPositionChange_clamped);
+
+    //Serial.printf("Pos: %d\n", requestedPositionChange_clamped);
+
+    // Remove existing ISR and clear interrupts
+    //pcnt_isr_handler_remove(PCNT_UNIT_1);
+    pcnt_counter_pause(PCNT_UNIT_1);
+    pcnt_counter_clear(PCNT_UNIT_1);
+    
+    pcnt_set_event_value(PCNT_UNIT_1, PCNT_EVT_H_LIM, newHighLimit);
+    pcnt_set_event_value(PCNT_UNIT_1, PCNT_EVT_L_LIM, newLowLimit);
+
+    // Re-enable events and reinstall the ISR
+    //pcnt_event_enable(PCNT_UNIT_1, PCNT_EVT_H_LIM);
+    //pcnt_event_enable(PCNT_UNIT_1, PCNT_EVT_L_LIM);
+    //pcnt_isr_handler_add(PCNT_UNIT_1, pcnt_controll_intr_handler, NULL);
+
+    // Resume PCNT
+    pcnt_counter_clear(PCNT_UNIT_1);
+    pcnt_counter_resume(PCNT_UNIT_1);
+
+
+    // Restart the MCPWM output
+    if (requestedPositionChange_ > 0)
+    {
+      digitalWrite(PCNT_DIR_GPIO, HIGH);  // Count up
+      mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);
+    }
+    else
+    {
+      digitalWrite(PCNT_DIR_GPIO, LOW);  // Count up
+      mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);
+    }
+  
   }
-
-  // Read and print the pulse count
-  int16_t pulseCount_0 = 0;
-  int16_t pulseCount_1 = 0;
-  esp_err_t pcntReadStatus_0 = pcnt_get_counter_value(PCNT_UNIT_0, &pulseCount_0);
-  //esp_err_t pcntReadStatus_1 = pcnt_get_counter_value(PCNT_UNIT_1, &pulseCount_1);
-
-  long totalPulseCount = (overflowCount * PCNT_MIN_MAX_THRESHOLD_UNIT_0) + pulseCount_0; 
-
-
-  Serial.printf("Pulse Count: %d,    %d\n", pulseCount_0, totalPulseCount);
+  
+   
+}
 
 
 
-  // Check PCNT event queue
-  /*pcnt_evt_t evt;
-  if (xQueueReceive(pcnt_evt_queue, &evt, 0)) {
-    Serial.printf("PCNT Event: Unit=%d, Status=%d, Timestamp=%lu\n",
-                  evt.unit, evt.status, evt.timeStamp);
-  }*/
+void setMaxSpeed(long speed)
+{
+  long maxSpeed = constrain(speed, 0, MAX_SPEED_IN_HZ);
+}
+
+/****************************************************************************************************************/
+/*                                                                                                              */
+/*                      Misc function                                                                           */
+/*                                                                                                              */
+/****************************************************************************************************************/
+
+
+
+
+
+
+
+
+
+
+/****************************************************************************************************************/
+/*                                                                                                              */
+/*                                                                                                              */
+/*                                                                                                              */
+/****************************************************************************************************************/
+
+
+void setup() {
+  Serial.begin(115200);
+
+  uint8_t stepPin = PWM_GPIO_PIN;
+  uint8_t dirPin = PCNT_DIR_GPIO;
+
+
+  // init MCPWM
+  init_mcpwm(stepPin, dirPin);
+
+  // init the multiturn position observer pcnt 
+  init_pcnt_multiturn(stepPin, dirPin);
+  init_pcnt_control(stepPin, dirPin);
+
+  // configure pin modes
+  pinMode(stepPin, OUTPUT);
+  pinMode(dirPin, OUTPUT);
+  digitalWrite(stepPin, LOW);
+  digitalWrite(dirPin, LOW);
+  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0A, stepPin);
+
+  // connect PCNT to GPIO pin
+  gpio_iomux_in(stepPin, PCNT_SIG_CH0_IN0_IDX);
+  gpio_iomux_in(stepPin, PCNT_SIG_CH0_IN1_IDX);
+
+  // reset pcnt counters
+  pcnt_counter_clear(PCNT_UNIT_0);
+  pcnt_counter_clear(PCNT_UNIT_1);
+
+}
+
+
+
+float sineFrequencyInHz = 1;
+float sineAmplitudeInSteps = 1000;
+
+static long targetPosition = 0;
+
+void loop() {
 
   
 
-  if (totalPulseCount <= -50000) {
-        digitalWrite(PCNT_DIR_GPIO, HIGH);  // Count up
-    }
+  float tInSeconds = (float)millis() / 1000.0f;
 
-    if (totalPulseCount >= 50000) {
-        digitalWrite(PCNT_DIR_GPIO, LOW);  // Count up
-    }
 
-    
-  // Clear the counter for the next measurement
-  //pcnt_counter_clear(PCNT_UNIT);
+  // choose target pattern
+  uint8_t targetPattern_u8 = 1;
+  float targetPos_fl32 = 0;
+  switch (targetPattern_u8)
+  {
+    case 0: 
+      targetPosition += 500;  // Increment target position cyclically
+      if (targetPosition > 50000) targetPosition = -50000;  // Reset after reaching max range
+      break;
+    case 1:
+      // sine wave
+      targetPos_fl32 = sineAmplitudeInSteps * sin( 2.0f * M_PI * sineFrequencyInHz * tInSeconds);
+      targetPosition = targetPos_fl32;
+      break;
+    case 2:
+      // step
+      if ( fmod(tInSeconds, 2) > 1)
+      {targetPosition = -sineAmplitudeInSteps;}
+      else
+      {targetPosition = sineAmplitudeInSteps;}
+      break;
 
-  pwmEnabled = !pwmEnabled;  // Toggle the flag
-  delay(100);               // Wait for 1 second
+  }
+  
+
+  // Update PCNT limits and target
+  updateTargetPosition(targetPosition);
+
+  delay(10);
+  int16_t pulseCount_1 = 0;
+  esp_err_t pcntReadStatus_0 = pcnt_get_counter_value(PCNT_UNIT_1, &pulseCount_1);
+
+  // Read and print the pulse count
+  long totalPulseCount = readCurrentPosition();
+
+  // print routine
+  //Serial.printf("target:%d,cnt1:%d,cnt2:%d\n", targetPosition, pulseCount_1, totalPulseCount);		//the first variable for plotting
+  Serial.printf("target:%d,currentPos:%d\n", targetPosition, totalPulseCount);		//the first variable for plotting
+
+  delay(10);  // Adjust delay as needed
 }
