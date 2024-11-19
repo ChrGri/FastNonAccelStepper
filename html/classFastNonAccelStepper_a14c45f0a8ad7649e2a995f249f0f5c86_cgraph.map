@@ -1,8 +1,9 @@
 <map id="FastNonAccelStepper::begin" name="FastNonAccelStepper::begin">
-<area shape="rect" id="node1" title="Initialize the stepper motor with specified step and direction pins." alt="" coords="5,69,164,109"/>
-<area shape="rect" id="node2" href="$classFastNonAccelStepper.html#a496a57bc0937f8cff9b3ea3fb3431e3a" title="Initialize the MCPWM module for step signal generation." alt="" coords="212,5,371,45"/>
-<area shape="rect" id="node3" href="$classFastNonAccelStepper.html#a589c329124c424644085bb84778da3ce" title="Initialize the PCNT module for position control." alt="" coords="212,69,371,109"/>
-<area shape="rect" id="node5" href="$classFastNonAccelStepper.html#a6e74eff853bfa9b90649767b735c1517" title="Initialize the PCNT module for multiturn position tracking." alt="" coords="212,133,371,173"/>
-<area shape="rect" id="node4" href="$classFastNonAccelStepper.html#a6a0bf0e1386b261cdb29c0491ea64341" title="Handle PCNT events for position control." alt="" coords="419,69,577,109"/>
-<area shape="rect" id="node6" href="$classFastNonAccelStepper.html#a7ef0058ae03883a90674a2c73b060137" title="Handle PCNT events for multiturn tracking." alt="" coords="419,133,577,173"/>
+<area shape="rect" id="node1" title="Initialize the stepper motor with specified step and direction pins." alt="" coords="5,68,164,108"/>
+<area shape="rect" id="node2" href="$classFastNonAccelStepper.html#a2f1523b3e58a47bedd06d7d686c60a85" title=" " alt="" coords="625,24,784,64"/>
+<area shape="rect" id="node3" href="$classFastNonAccelStepper.html#a496a57bc0937f8cff9b3ea3fb3431e3a" title="Initialize the MCPWM module for step signal generation." alt="" coords="212,36,371,76"/>
+<area shape="rect" id="node4" href="$classFastNonAccelStepper.html#a589c329124c424644085bb84778da3ce" title="Initialize the PCNT module for position control." alt="" coords="212,100,371,140"/>
+<area shape="rect" id="node6" href="$classFastNonAccelStepper.html#a6e74eff853bfa9b90649767b735c1517" title="Initialize the PCNT module for multiturn position tracking." alt="" coords="212,164,371,204"/>
+<area shape="rect" id="node5" href="$classFastNonAccelStepper.html#a6a0bf0e1386b261cdb29c0491ea64341" title="Handle PCNT events for position control." alt="" coords="419,68,577,108"/>
+<area shape="rect" id="node7" href="$classFastNonAccelStepper.html#a7ef0058ae03883a90674a2c73b060137" title="Handle PCNT events for multiturn tracking." alt="" coords="419,164,577,204"/>
 </map>

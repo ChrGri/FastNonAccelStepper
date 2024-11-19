@@ -1,5 +1,7 @@
 <map id="FastNonAccelStepper::getCurrentPosition" name="FastNonAccelStepper::getCurrentPosition">
-<area shape="rect" id="node1" title="Read the current position of the stepper motor." alt="" coords="448,5,607,45"/>
-<area shape="rect" id="node2" href="$classFastNonAccelStepper.html#a8c38ceff188970c586549b7fe1b09691" title="Update the target position for the stepper motor." alt="" coords="241,5,400,45"/>
-<area shape="rect" id="node3" href="$classFastNonAccelStepper.html#aad66a1725e2e55e443958f0c3cdb1d16" title="Run the stepper motor control logic. Call this frequently in the loop." alt="" coords="5,13,193,38"/>
+<area shape="rect" id="node1" title="Read the current position of the stepper motor." alt="" coords="459,37,617,77"/>
+<area shape="rect" id="node2" href="$classFastNonAccelStepper.html#a8c38ceff188970c586549b7fe1b09691" title="Update the target position for the stepper motor." alt="" coords="252,5,411,45"/>
+<area shape="rect" id="node4" href="$classFastNonAccelStepper.html#a17963d2dbf1d38700b2fc558dda7a573" title=" " alt="" coords="252,69,411,109"/>
+<area shape="rect" id="node3" href="$classFastNonAccelStepper.html#aad66a1725e2e55e443958f0c3cdb1d16" title="Run the stepper motor control logic. Call this frequently in the loop." alt="" coords="11,13,199,38"/>
+<area shape="rect" id="node5" href="$classFastNonAccelStepper.html#a77ef4f13675ad80bf93d2849619a04a0" title=" " alt="" coords="5,69,204,109"/>
 </map>
