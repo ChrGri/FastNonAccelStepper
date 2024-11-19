@@ -25,8 +25,10 @@ jobs:
         
       - name: Move files to root
         run: |
-          mv html/* ./  # Move contents of 'html' to current directory
-          rmdir html     # Remove the now-empty 'html' directory
+          shopt -s dotglob  # Include hidden files in the move
+          mv html/* .      # Move the contents of 'html' to the current directory
+          shopt -u dotglob  # Reset the dotglob option
+          rmdir html         # Remove the now-empty 'html' directory
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
