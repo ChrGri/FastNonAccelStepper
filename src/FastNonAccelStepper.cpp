@@ -1,5 +1,4 @@
 #include "FastNonAccelStepper.h"
-#include <Arduino.h>
 #include <driver/mcpwm.h>
 #include <driver/pcnt.h>
 
@@ -9,12 +8,11 @@
 /************************************************************************/
 /*								Defines 								*/
 /************************************************************************/
-#define MAX_SPEED_IN_HZ 300000
-#define MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE 20000
-#define PWM_DUTY_CYCLE 50.0
-#define PCNT_MIN_MAX_THRESHOLD 32767 // INT16_MAX = (2^15)-1 = 32767
-
-
+#define MAX_SPEED_IN_HZ (int32_t)250000
+#define MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE (int32_t)20000
+#define PWM_DUTY_CYCLE 50.0f
+#define PCNT_MIN_MAX_THRESHOLD 32767l // INT16_MAX = (2^15)-1 = 32767
+#define POSITION_TRIGGER_THRESHOLD 1
 
 
 /************************************************************************/
@@ -26,16 +24,17 @@ FastNonAccelStepper::FastNonAccelStepper()
 void FastNonAccelStepper::begin(uint8_t stepPin, uint8_t dirPin) {
     _stepPin = stepPin;
     _dirPin = dirPin;
+    _maxSpeed = MAX_SPEED_IN_HZ;
+
+	// init MCPWM and PCNTs
+    initMCPWM();
+    initPCNTMultiturn();
+    initPCNTControl();
 
     pinMode(_stepPin, OUTPUT);
     pinMode(_dirPin, OUTPUT);
     digitalWrite(_stepPin, LOW);
     digitalWrite(_dirPin, LOW);
-	
-	// init MCPWM and PCNTs
-    initMCPWM();
-    initPCNTMultiturn();
-    initPCNTControl();
 
 	// configure pin modes
 	mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0A, _stepPin);
@@ -68,14 +67,17 @@ void FastNonAccelStepper::moveTo(long targetPos) {
 
     mcpwm_stop(MCPWM_UNIT_0, MCPWM_TIMER_0);
 
-    if (positionChange != 0) {
-        int16_t highLimit = abs(positionChange);
+    int16_t absPositionChange = abs(positionChange);
+
+    if (absPositionChange > POSITION_TRIGGER_THRESHOLD) {
+        int16_t highLimit = absPositionChange - 1; // subtract one, since count limit is triggered after value is exceeded
         int16_t lowLimit = -highLimit;
 
         pcnt_counter_pause(PCNT_UNIT_1);
         pcnt_counter_clear(PCNT_UNIT_1);
         pcnt_set_event_value(PCNT_UNIT_1, PCNT_EVT_H_LIM, highLimit);
         pcnt_set_event_value(PCNT_UNIT_1, PCNT_EVT_L_LIM, lowLimit);
+        pcnt_counter_clear(PCNT_UNIT_1);
         pcnt_counter_resume(PCNT_UNIT_1);
 
         if (positionChange > 0) {
@@ -122,8 +124,17 @@ void FastNonAccelStepper::initPCNTMultiturn() {
     pcntConfig.counter_l_lim = -PCNT_MIN_MAX_THRESHOLD;
 
     pcnt_unit_config(&pcntConfig);
+
     pcnt_set_filter_value(PCNT_UNIT_0, 100);
     pcnt_filter_enable(PCNT_UNIT_0);
+
+    // Activate pcnt
+    pcnt_counter_clear(PCNT_UNIT_0);
+    pcnt_counter_resume(PCNT_UNIT_0);
+
+    // PCNT event
+    pcnt_event_enable(PCNT_UNIT_0, PCNT_EVT_H_LIM);
+    pcnt_event_enable(PCNT_UNIT_0, PCNT_EVT_L_LIM);
 
     pcnt_isr_service_install(0);
     pcnt_isr_handler_add(PCNT_UNIT_0, multiturnPCNTISR, this);
@@ -147,6 +158,14 @@ void FastNonAccelStepper::initPCNTControl() {
     pcnt_unit_config(&pcntConfig);
     pcnt_set_filter_value(PCNT_UNIT_1, 100);
     pcnt_filter_enable(PCNT_UNIT_1);
+
+    // Activate pcnt
+    pcnt_counter_clear(PCNT_UNIT_1);
+    pcnt_counter_resume(PCNT_UNIT_1);
+
+    // PCNT event
+    pcnt_event_enable(PCNT_UNIT_1, PCNT_EVT_H_LIM);
+    pcnt_event_enable(PCNT_UNIT_1, PCNT_EVT_L_LIM);
 
     pcnt_isr_handler_add(PCNT_UNIT_1, controlPCNTISR, this);
     pcnt_counter_clear(PCNT_UNIT_1);

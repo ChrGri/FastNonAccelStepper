@@ -6,12 +6,16 @@ float sineFrequencyInHz = 1;
 float sineAmplitudeInSteps = 1000;
 
 
-FastNonAccelStepper stepper(PWM_GPIO_PIN, PCNT_DIR_GPIO);
+int dirPin = 18;
+int pulPin = 19;
+
+FastNonAccelStepper stepper;
+
 
 void setup() {
     Serial.begin(115200);
-    stepper.init();
-    stepper.setMaxSpeed(200000);
+    stepper.begin(pulPin, dirPin);
+    //stepper.setMaxSpeed(200000);
 }
 
 
@@ -22,7 +26,7 @@ void loop() {
 
 
 	// choose target pattern
-	uint8_t targetPattern_u8 = 1;
+	uint8_t targetPattern_u8 = 2;
 	float targetPos_fl32 = 0;
 	switch (targetPattern_u8)
 	{
@@ -45,7 +49,7 @@ void loop() {
 	}
 
 	// Update PCNT limits and target
-	stepper.setTargetPosition(targetPosition);
+	stepper.moveTo(targetPosition);
 
 	// Read and print the pulse count
 	long currentPosition = stepper.getCurrentPosition();

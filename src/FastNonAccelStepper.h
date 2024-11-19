@@ -1,7 +1,7 @@
 #ifndef FASTNONACCELSTEPPER_H
 #define FASTNONACCELSTEPPER_H
 
-
+#include <Arduino.h>
 
 
 /**
@@ -26,7 +26,7 @@ public:
      * @brief Set the maximum speed of the stepper motor.
      * @param speed Maximum speed in Hz.
      */
-    void setMaxSpeed(long speed);
+    void setMaxSpeed(uint32_t speed);
 
     /**
      * @brief Update the target position for the stepper motor.
