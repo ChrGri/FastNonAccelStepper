@@ -52,6 +52,9 @@ private:
     uint32_t _maxSpeed;            ///< Maximum speed in Hz.
     volatile int _overflowCount; ///< Overflow count for multiturn position tracking.
 
+    int32_t _zeroPosition_i32 = 0;
+    bool _isRunning = false;
+
     xQueueHandle _pcntQueue;   ///< Queue to handle PCNT events.
 
     /**
@@ -80,6 +83,21 @@ private:
      * @param arg ISR argument.
      */
     static void IRAM_ATTR controlPCNTISR(void* arg);
+
+
+
+
+public:
+    void move(long stepsToMove);
+
+    void forceStop();
+    void setCurrentPosition(int32_t newPosition_i32);
+    void forceStopAndNewPosition(int32_t newPosition_i32);
+    bool isRunning();
+    bool keepRunningInDir(bool forwardDir);
+    void keepRunningForward();
+    void keepRunningBackward();
+
 };
 
 #endif // FASTNONACCELSTEPPER_H

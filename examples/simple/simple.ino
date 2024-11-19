@@ -15,7 +15,7 @@ FastNonAccelStepper stepper;
 void setup() {
     Serial.begin(115200);
     stepper.begin(pulPin, dirPin);
-    //stepper.setMaxSpeed(200000);
+    stepper.setMaxSpeed(1000);
 }
 
 

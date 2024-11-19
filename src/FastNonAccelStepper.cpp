@@ -8,11 +8,12 @@
 /************************************************************************/
 /*								Defines 								*/
 /************************************************************************/
-#define MAX_SPEED_IN_HZ (int32_t)250000
+#define MAX_SPEED_IN_HZ (int32_t)400000
 #define MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE (int32_t)20000
 #define PWM_DUTY_CYCLE 50.0f
 #define PCNT_MIN_MAX_THRESHOLD 32767l // INT16_MAX = (2^15)-1 = 32767
 #define POSITION_TRIGGER_THRESHOLD 1
+#define PCNT_FILTER_VALUE 10
 
 
 /************************************************************************/
@@ -46,6 +47,9 @@ void FastNonAccelStepper::begin(uint8_t stepPin, uint8_t dirPin) {
 	// reset pcnt counters
 	pcnt_counter_clear(PCNT_UNIT_0);
 	pcnt_counter_clear(PCNT_UNIT_1);
+
+    // make sure mcpwm is stopped
+    forceStop();
 	  
 }
 
@@ -56,14 +60,16 @@ void FastNonAccelStepper::setMaxSpeed(uint32_t speed) {
     // Update the MCPWM timer with the new frequency
     if (_maxSpeed > 0) {
         mcpwm_set_frequency(MCPWM_UNIT_0, MCPWM_TIMER_0, _maxSpeed);
+        forceStop();
     } else {
-        mcpwm_stop(MCPWM_UNIT_0, MCPWM_TIMER_0);
+        //mcpwm_stop(MCPWM_UNIT_0, MCPWM_TIMER_0);
+        forceStop();
     }
 }
 
-void FastNonAccelStepper::moveTo(long targetPos) {
-    long currentPos = getCurrentPosition();
-    long positionChange = constrain(targetPos - currentPos, -MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE, MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE);
+
+void FastNonAccelStepper::move(long stepsToMove) {
+    long positionChange = constrain(stepsToMove, -MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE, MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE);
 
     mcpwm_stop(MCPWM_UNIT_0, MCPWM_TIMER_0);
 
@@ -85,14 +91,22 @@ void FastNonAccelStepper::moveTo(long targetPos) {
         } else {
             digitalWrite(_dirPin, LOW);
         }
+        _isRunning = true;
         mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);
     }
 }
 
+
+void FastNonAccelStepper::moveTo(long targetPos) {
+    long currentPos = getCurrentPosition();
+    long positionChange = constrain(targetPos - currentPos, -MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE, MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE);
+    move(positionChange);
+} 
+
 long FastNonAccelStepper::getCurrentPosition() const {
     int16_t pulseCount = 0;
     pcnt_get_counter_value(PCNT_UNIT_0, &pulseCount);
-    return ((long)_overflowCount * (long)PCNT_MIN_MAX_THRESHOLD) + (long)pulseCount;
+    return ((long)_overflowCount * (long)PCNT_MIN_MAX_THRESHOLD) + (long)pulseCount - _zeroPosition_i32;
 }
 
 void FastNonAccelStepper::run() {
@@ -125,7 +139,7 @@ void FastNonAccelStepper::initPCNTMultiturn() {
 
     pcnt_unit_config(&pcntConfig);
 
-    pcnt_set_filter_value(PCNT_UNIT_0, 100);
+    pcnt_set_filter_value(PCNT_UNIT_0, PCNT_FILTER_VALUE);
     pcnt_filter_enable(PCNT_UNIT_0);
 
     // Activate pcnt
@@ -156,7 +170,7 @@ void FastNonAccelStepper::initPCNTControl() {
     pcntConfig.counter_l_lim = -PCNT_MIN_MAX_THRESHOLD;
 
     pcnt_unit_config(&pcntConfig);
-    pcnt_set_filter_value(PCNT_UNIT_1, 100);
+    pcnt_set_filter_value(PCNT_UNIT_1, PCNT_FILTER_VALUE);
     pcnt_filter_enable(PCNT_UNIT_1);
 
     // Activate pcnt
@@ -186,10 +200,88 @@ void IRAM_ATTR FastNonAccelStepper::multiturnPCNTISR(void* arg) {
 }
 
 void IRAM_ATTR FastNonAccelStepper::controlPCNTISR(void* arg) {
+    FastNonAccelStepper* instance = static_cast<FastNonAccelStepper*>(arg);
     uint32_t status;
     pcnt_get_event_status(PCNT_UNIT_1, &status);
 
     if (status & PCNT_EVT_H_LIM || status & PCNT_EVT_L_LIM) {
-        mcpwm_stop(MCPWM_UNIT_0, MCPWM_TIMER_0);
+        //mcpwm_stop(MCPWM_UNIT_0, MCPWM_TIMER_0);
+        instance->forceStop();
     }
 }
+
+
+
+
+
+void FastNonAccelStepper::forceStop()
+{
+    // stop mcpwm
+    mcpwm_stop(MCPWM_UNIT_0, MCPWM_TIMER_0);
+    _isRunning = false;
+}  
+
+
+void FastNonAccelStepper::setCurrentPosition(int32_t newPosition_i32)
+{
+    // set new position
+    // newPosition_i32 = (getCurrentPosition + oldZeroPos) - (newZeroPos)
+    // newZeroPos = (getCurrentPosition + oldZeroPos) - newPosition_i32
+    int32_t newZeroPos_i32 = (getCurrentPosition() + _zeroPosition_i32) - newPosition_i32;
+    _zeroPosition_i32 = newZeroPos_i32;
+}
+
+
+void FastNonAccelStepper::forceStopAndNewPosition(int32_t newPosition_i32)
+{
+    // stop mcpwm
+    forceStop();
+
+    // set new position
+    setCurrentPosition(newPosition_i32);
+}   
+
+
+bool FastNonAccelStepper::isRunning()
+{
+    return _isRunning;
+}
+
+bool FastNonAccelStepper::keepRunningInDir(bool forwardDir)
+{
+    mcpwm_stop(MCPWM_UNIT_0, MCPWM_TIMER_0);
+
+    pcnt_counter_pause(PCNT_UNIT_1);
+    pcnt_counter_clear(PCNT_UNIT_1);
+
+    pcnt_event_disable(PCNT_UNIT_1, PCNT_EVT_H_LIM);
+    pcnt_event_disable(PCNT_UNIT_1, PCNT_EVT_L_LIM);
+
+    pcnt_counter_clear(PCNT_UNIT_1);
+    pcnt_counter_resume(PCNT_UNIT_1);
+    
+    if (forwardDir)
+    {
+        digitalWrite(_dirPin, HIGH);
+    }
+    else
+    {
+        digitalWrite(_dirPin, LOW);
+    }
+
+    _isRunning = true;
+    mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);
+}
+
+void FastNonAccelStepper::keepRunningForward()
+{
+    keepRunningInDir(true);
+}
+
+void FastNonAccelStepper::keepRunningBackward()
+{
+    keepRunningInDir(false);
+}
+
+
+
