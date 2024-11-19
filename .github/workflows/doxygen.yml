@@ -26,5 +26,5 @@ jobs:
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: html  # Output folder of Doxygen
+          folder: doxy  # Output folder of Doxygen
           branch: gh-pages  # Branch to deploy to
