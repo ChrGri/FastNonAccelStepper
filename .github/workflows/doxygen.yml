@@ -30,9 +30,19 @@ jobs:
           shopt -u dotglob  # Reset the dotglob option
           rmdir html         # Remove the now-empty 'html' directory
 
+      #- name: Deploy to GitHub Pages
+      #  uses: JamesIves/github-pages-deploy-action@v4
+      #  with:
+      #    folder: html  # Output folder of Doxygen
+      #    branch: gh-pages  # Branch to deploy to
+      #    token: ${{ secrets.DEPLOY_TOKEN }}  # Use the secret
+
+
       - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          folder: html  # Output folder of Doxygen
+          github_token: ${{ secrets.DEPLOY_TOKEN }}
+          # Default Doxyfile build documentation to html directory. 
+          # Change the directory if changes in Doxyfile
           branch: gh-pages  # Branch to deploy to
-          token: ${{ secrets.DEPLOY_TOKEN }}  # Use the secret
+          publish_dir: ./html
