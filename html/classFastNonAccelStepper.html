@@ -397,12 +397,13 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="classFastNonAccelStepper_a2f1523b3e58a47bedd06d7d686c60a85_icgraph.png" border="0" usemap="#aclassFastNonAccelStepper_a2f1523b3e58a47bedd06d7d686c60a85_icgraph" alt=""/></div>
 <map name="aclassFastNonAccelStepper_a2f1523b3e58a47bedd06d7d686c60a85_icgraph" id="aclassFastNonAccelStepper_a2f1523b3e58a47bedd06d7d686c60a85_icgraph">
-<area shape="rect" title=" " alt="" coords="665,73,824,113"/>
-<area shape="rect" href="classFastNonAccelStepper.html#a14c45f0a8ad7649e2a995f249f0f5c86" title="Initialize the stepper motor with specified step and direction pins." alt="" coords="5,13,164,53"/>
-<area shape="rect" href="classFastNonAccelStepper.html#a6a0bf0e1386b261cdb29c0491ea64341" title="Handle PCNT events for position control." alt="" coords="439,41,597,81"/>
-<area shape="rect" href="classFastNonAccelStepper.html#a77ef4f13675ad80bf93d2849619a04a0" title=" " alt="" coords="419,105,617,145"/>
-<area shape="rect" href="classFastNonAccelStepper.html#a0a67e40c7ad919d3075766137ccc543f" title="Set the maximum speed of the stepper motor." alt="" coords="439,169,597,209"/>
-<area shape="rect" href="classFastNonAccelStepper.html#a589c329124c424644085bb84778da3ce" title="Initialize the PCNT module for position control." alt="" coords="212,41,371,81"/>
+<area shape="rect" title=" " alt="" coords="665,114,824,154"/>
+<area shape="rect" href="classFastNonAccelStepper.html#a14c45f0a8ad7649e2a995f249f0f5c86" title="Initialize the stepper motor with specified step and direction pins." alt="" coords="5,22,164,62"/>
+<area shape="rect" href="classFastNonAccelStepper.html#a6a0bf0e1386b261cdb29c0491ea64341" title="Handle PCNT events for position control." alt="" coords="439,50,597,90"/>
+<area shape="rect" href="classFastNonAccelStepper.html#a77ef4f13675ad80bf93d2849619a04a0" title=" " alt="" coords="419,114,617,154"/>
+<area shape="rect" href="classFastNonAccelStepper.html#aa12936cbafdf629519fe77506e864fde" title=" " alt="" coords="439,178,597,218"/>
+<area shape="rect" href="classFastNonAccelStepper.html#a0a67e40c7ad919d3075766137ccc543f" title="Set the maximum speed of the stepper motor." alt="" coords="439,242,597,282"/>
+<area shape="rect" href="classFastNonAccelStepper.html#a589c329124c424644085bb84778da3ce" title="Initialize the PCNT module for position control." alt="" coords="212,50,371,90"/>
 </map>
 </div>
 
@@ -732,18 +733,19 @@ Here is the caller graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00281">281</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
-<div class="fragment"><div class="line"><span class="lineno">  282</span>{</div>
-<div class="line"><span class="lineno">  283</span>    <a class="code hl_function" href="classFastNonAccelStepper.html#aa12936cbafdf629519fe77506e864fde">keepRunningInDir</a>(<span class="keyword">false</span>);</div>
-<div class="line"><span class="lineno">  284</span>}</div>
-<div class="ttc" id="aclassFastNonAccelStepper_html_aa12936cbafdf629519fe77506e864fde"><div class="ttname"><a href="classFastNonAccelStepper.html#aa12936cbafdf629519fe77506e864fde">FastNonAccelStepper::keepRunningInDir</a></div><div class="ttdeci">bool keepRunningInDir(bool forwardDir)</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00250">FastNonAccelStepper.cpp:250</a></div></div>
+<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00282">282</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  283</span>{</div>
+<div class="line"><span class="lineno">  284</span>    <span class="comment">//keepRunningInDir(false);</span></div>
+<div class="line"><span class="lineno">  285</span>    <a class="code hl_function" href="classFastNonAccelStepper.html#a954a17a6c5c6f19f7fa6e8d528483cf2">move</a>(-<a class="code hl_define" href="FastNonAccelStepper_8cpp.html#a85f2db5f58e51264c23b3d3aa6260ba8">PCNT_MIN_MAX_THRESHOLD</a>);</div>
+<div class="line"><span class="lineno">  286</span>}</div>
+<div class="ttc" id="aclassFastNonAccelStepper_html_a954a17a6c5c6f19f7fa6e8d528483cf2"><div class="ttname"><a href="classFastNonAccelStepper.html#a954a17a6c5c6f19f7fa6e8d528483cf2">FastNonAccelStepper::move</a></div><div class="ttdeci">void move(long stepsToMove)</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00071">FastNonAccelStepper.cpp:71</a></div></div>
 </div><!-- fragment --><div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="classFastNonAccelStepper_a06aaa1bd8fcba0f7af24b1b1494f8fae_cgraph.png" border="0" usemap="#aclassFastNonAccelStepper_a06aaa1bd8fcba0f7af24b1b1494f8fae_cgraph" alt=""/></div>
 <map name="aclassFastNonAccelStepper_a06aaa1bd8fcba0f7af24b1b1494f8fae_cgraph" id="aclassFastNonAccelStepper_a06aaa1bd8fcba0f7af24b1b1494f8fae_cgraph">
 <area shape="rect" title=" " alt="" coords="5,5,184,45"/>
-<area shape="rect" href="classFastNonAccelStepper.html#aa12936cbafdf629519fe77506e864fde" title=" " alt="" coords="232,5,391,45"/>
+<area shape="rect" href="classFastNonAccelStepper.html#a954a17a6c5c6f19f7fa6e8d528483cf2" title=" " alt="" coords="232,5,391,45"/>
 </map>
 </div>
 
@@ -766,15 +768,16 @@ Here is the call graph for this function:</div>
 
 <p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00276">276</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  277</span>{</div>
-<div class="line"><span class="lineno">  278</span>    <a class="code hl_function" href="classFastNonAccelStepper.html#aa12936cbafdf629519fe77506e864fde">keepRunningInDir</a>(<span class="keyword">true</span>);</div>
-<div class="line"><span class="lineno">  279</span>}</div>
+<div class="line"><span class="lineno">  278</span>    <span class="comment">//keepRunningInDir(true);</span></div>
+<div class="line"><span class="lineno">  279</span>    <a class="code hl_function" href="classFastNonAccelStepper.html#a954a17a6c5c6f19f7fa6e8d528483cf2">move</a>(<a class="code hl_define" href="FastNonAccelStepper_8cpp.html#a85f2db5f58e51264c23b3d3aa6260ba8">PCNT_MIN_MAX_THRESHOLD</a>);</div>
+<div class="line"><span class="lineno">  280</span>}</div>
 </div><!-- fragment --><div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="classFastNonAccelStepper_af2ea424642347f205c067f246060580c_cgraph.png" border="0" usemap="#aclassFastNonAccelStepper_af2ea424642347f205c067f246060580c_cgraph" alt=""/></div>
 <map name="aclassFastNonAccelStepper_af2ea424642347f205c067f246060580c_cgraph" id="aclassFastNonAccelStepper_af2ea424642347f205c067f246060580c_cgraph">
 <area shape="rect" title=" " alt="" coords="5,5,172,45"/>
-<area shape="rect" href="classFastNonAccelStepper.html#aa12936cbafdf629519fe77506e864fde" title=" " alt="" coords="220,5,379,45"/>
+<area shape="rect" href="classFastNonAccelStepper.html#a954a17a6c5c6f19f7fa6e8d528483cf2" title=" " alt="" coords="220,5,379,45"/>
 </map>
 </div>
 
@@ -798,7 +801,7 @@ Here is the call graph for this function:</div>
 
 <p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00250">250</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  251</span>{</div>
-<div class="line"><span class="lineno">  252</span>    mcpwm_stop(MCPWM_UNIT_0, MCPWM_TIMER_0);</div>
+<div class="line"><span class="lineno">  252</span>    <a class="code hl_function" href="classFastNonAccelStepper.html#a2f1523b3e58a47bedd06d7d686c60a85">forceStop</a>();</div>
 <div class="line"><span class="lineno">  253</span> </div>
 <div class="line"><span class="lineno">  254</span>    pcnt_counter_pause(PCNT_UNIT_1);</div>
 <div class="line"><span class="lineno">  255</span>    pcnt_counter_clear(PCNT_UNIT_1);</div>
@@ -809,26 +812,25 @@ Here is the call graph for this function:</div>
 <div class="line"><span class="lineno">  260</span>    pcnt_counter_clear(PCNT_UNIT_1);</div>
 <div class="line"><span class="lineno">  261</span>    pcnt_counter_resume(PCNT_UNIT_1);</div>
 <div class="line"><span class="lineno">  262</span>    </div>
-<div class="line"><span class="lineno">  263</span>    <span class="keywordflow">if</span> (forwardDir)</div>
-<div class="line"><span class="lineno">  264</span>    {</div>
-<div class="line"><span class="lineno">  265</span>        digitalWrite(<a class="code hl_variable" href="classFastNonAccelStepper.html#abe2c601b0b30d214f0ffa1cf2fd827b3">_dirPin</a>, HIGH);</div>
-<div class="line"><span class="lineno">  266</span>    }</div>
-<div class="line"><span class="lineno">  267</span>    <span class="keywordflow">else</span></div>
-<div class="line"><span class="lineno">  268</span>    {</div>
-<div class="line"><span class="lineno">  269</span>        digitalWrite(<a class="code hl_variable" href="classFastNonAccelStepper.html#abe2c601b0b30d214f0ffa1cf2fd827b3">_dirPin</a>, LOW);</div>
-<div class="line"><span class="lineno">  270</span>    }</div>
-<div class="line"><span class="lineno">  271</span> </div>
-<div class="line"><span class="lineno">  272</span>    <a class="code hl_variable" href="classFastNonAccelStepper.html#a1792aff3753f27058002b924ab8c1876">_isRunning</a> = <span class="keyword">true</span>;</div>
-<div class="line"><span class="lineno">  273</span>    mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);</div>
+<div class="line"><span class="lineno">  263</span>    <span class="comment">/*if (forwardDir)</span></div>
+<div class="line"><span class="lineno">  264</span><span class="comment">    {</span></div>
+<div class="line"><span class="lineno">  265</span><span class="comment">        digitalWrite(_dirPin, HIGH);</span></div>
+<div class="line"><span class="lineno">  266</span><span class="comment">    }</span></div>
+<div class="line"><span class="lineno">  267</span><span class="comment">    else</span></div>
+<div class="line"><span class="lineno">  268</span><span class="comment">    {</span></div>
+<div class="line"><span class="lineno">  269</span><span class="comment">        digitalWrite(_dirPin, LOW);</span></div>
+<div class="line"><span class="lineno">  270</span><span class="comment">    }</span></div>
+<div class="line"><span class="lineno">  271</span><span class="comment"></span> </div>
+<div class="line"><span class="lineno">  272</span><span class="comment">    _isRunning = true;*/</span></div>
+<div class="line"><span class="lineno">  273</span>    <span class="comment">//mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);</span></div>
 <div class="line"><span class="lineno">  274</span>}</div>
 </div><!-- fragment --><div class="dynheader">
-Here is the caller graph for this function:</div>
+Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><img src="classFastNonAccelStepper_aa12936cbafdf629519fe77506e864fde_icgraph.png" border="0" usemap="#aclassFastNonAccelStepper_aa12936cbafdf629519fe77506e864fde_icgraph" alt=""/></div>
-<map name="aclassFastNonAccelStepper_aa12936cbafdf629519fe77506e864fde_icgraph" id="aclassFastNonAccelStepper_aa12936cbafdf629519fe77506e864fde_icgraph">
-<area shape="rect" title=" " alt="" coords="232,37,391,77"/>
-<area shape="rect" href="classFastNonAccelStepper.html#a06aaa1bd8fcba0f7af24b1b1494f8fae" title=" " alt="" coords="5,5,184,45"/>
-<area shape="rect" href="classFastNonAccelStepper.html#af2ea424642347f205c067f246060580c" title=" " alt="" coords="11,69,178,109"/>
+<div class="center"><img src="classFastNonAccelStepper_aa12936cbafdf629519fe77506e864fde_cgraph.png" border="0" usemap="#aclassFastNonAccelStepper_aa12936cbafdf629519fe77506e864fde_cgraph" alt=""/></div>
+<map name="aclassFastNonAccelStepper_aa12936cbafdf629519fe77506e864fde_cgraph" id="aclassFastNonAccelStepper_aa12936cbafdf629519fe77506e864fde_cgraph">
+<area shape="rect" title=" " alt="" coords="5,5,164,45"/>
+<area shape="rect" href="classFastNonAccelStepper.html#a2f1523b3e58a47bedd06d7d686c60a85" title=" " alt="" coords="212,5,371,45"/>
 </map>
 </div>
 
@@ -885,9 +887,11 @@ Here is the caller graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><img src="classFastNonAccelStepper_a954a17a6c5c6f19f7fa6e8d528483cf2_icgraph.png" border="0" usemap="#aclassFastNonAccelStepper_a954a17a6c5c6f19f7fa6e8d528483cf2_icgraph" alt=""/></div>
 <map name="aclassFastNonAccelStepper_a954a17a6c5c6f19f7fa6e8d528483cf2_icgraph" id="aclassFastNonAccelStepper_a954a17a6c5c6f19f7fa6e8d528483cf2_icgraph">
-<area shape="rect" title=" " alt="" coords="448,5,607,45"/>
-<area shape="rect" href="classFastNonAccelStepper.html#a8c38ceff188970c586549b7fe1b09691" title="Update the target position for the stepper motor." alt="" coords="241,5,400,45"/>
-<area shape="rect" href="classFastNonAccelStepper.html#aad66a1725e2e55e443958f0c3cdb1d16" title="Run the stepper motor control logic. Call this frequently in the loop." alt="" coords="5,13,193,38"/>
+<area shape="rect" title=" " alt="" coords="468,69,627,109"/>
+<area shape="rect" href="classFastNonAccelStepper.html#a06aaa1bd8fcba0f7af24b1b1494f8fae" title=" " alt="" coords="241,5,420,45"/>
+<area shape="rect" href="classFastNonAccelStepper.html#af2ea424642347f205c067f246060580c" title=" " alt="" coords="247,69,414,109"/>
+<area shape="rect" href="classFastNonAccelStepper.html#a8c38ceff188970c586549b7fe1b09691" title="Update the target position for the stepper motor." alt="" coords="251,133,410,173"/>
+<area shape="rect" href="classFastNonAccelStepper.html#aad66a1725e2e55e443958f0c3cdb1d16" title="Run the stepper motor control logic. Call this frequently in the loop." alt="" coords="5,141,193,166"/>
 </map>
 </div>
 
@@ -924,7 +928,6 @@ Here is the caller graph for this function:</div>
 <div class="line"><span class="lineno">  103</span>    <a class="code hl_function" href="classFastNonAccelStepper.html#a954a17a6c5c6f19f7fa6e8d528483cf2">move</a>(positionChange);</div>
 <div class="line"><span class="lineno">  104</span>} </div>
 <div class="ttc" id="aclassFastNonAccelStepper_html_a36ca3f6fb4acfee0a40c13f4adc7b71f"><div class="ttname"><a href="classFastNonAccelStepper.html#a36ca3f6fb4acfee0a40c13f4adc7b71f">FastNonAccelStepper::getCurrentPosition</a></div><div class="ttdeci">long getCurrentPosition() const</div><div class="ttdoc">Read the current position of the stepper motor.</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00106">FastNonAccelStepper.cpp:106</a></div></div>
-<div class="ttc" id="aclassFastNonAccelStepper_html_a954a17a6c5c6f19f7fa6e8d528483cf2"><div class="ttname"><a href="classFastNonAccelStepper.html#a954a17a6c5c6f19f7fa6e8d528483cf2">FastNonAccelStepper::move</a></div><div class="ttdeci">void move(long stepsToMove)</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00071">FastNonAccelStepper.cpp:71</a></div></div>
 </div><!-- fragment --><div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
