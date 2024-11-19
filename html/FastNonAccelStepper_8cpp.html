@@ -79,7 +79,6 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="FastNonAccelStepper_8h_source.html">FastNonAccelStepper.h</a>&quot;</code><br />
-<code>#include &lt;Arduino.h&gt;</code><br />
 <code>#include &lt;driver/mcpwm.h&gt;</code><br />
 <code>#include &lt;driver/pcnt.h&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
@@ -87,11 +86,11 @@ Include dependency graph for FastNonAccelStepper.cpp:</div>
 <div class="dyncontent">
 <div class="center"><img src="FastNonAccelStepper_8cpp__incl.png" border="0" usemap="#asrc_2FastNonAccelStepper_8cpp" alt=""/></div>
 <map name="asrc_2FastNonAccelStepper_8cpp" id="asrc_2FastNonAccelStepper_8cpp">
-<area shape="rect" title=" " alt="" coords="204,5,412,31"/>
+<area shape="rect" title=" " alt="" coords="160,5,368,31"/>
 <area shape="rect" href="FastNonAccelStepper_8h.html" title=" " alt="" coords="5,79,176,104"/>
-<area shape="rect" title=" " alt="" coords="201,79,285,104"/>
-<area shape="rect" title=" " alt="" coords="309,79,437,104"/>
-<area shape="rect" title=" " alt="" coords="461,79,565,104"/>
+<area shape="rect" title=" " alt="" coords="200,79,328,104"/>
+<area shape="rect" title=" " alt="" coords="352,79,456,104"/>
+<area shape="rect" title=" " alt="" coords="49,152,133,177"/>
 </map>
 </div>
 </div>
@@ -99,14 +98,16 @@ Include dependency graph for FastNonAccelStepper.cpp:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="define-members" name="define-members"></a>
 Macros</h2></td></tr>
-<tr class="memitem:a18e9ada63911ebf21d4c07047ee555b9"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="FastNonAccelStepper_8cpp.html#a18e9ada63911ebf21d4c07047ee555b9">MAX_SPEED_IN_HZ</a>&#160;&#160;&#160;300000</td></tr>
+<tr class="memitem:a18e9ada63911ebf21d4c07047ee555b9"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="FastNonAccelStepper_8cpp.html#a18e9ada63911ebf21d4c07047ee555b9">MAX_SPEED_IN_HZ</a>&#160;&#160;&#160;(int32_t)250000</td></tr>
 <tr class="separator:a18e9ada63911ebf21d4c07047ee555b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6dc832eec948b3b53c77e5808d88134a"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="FastNonAccelStepper_8cpp.html#a6dc832eec948b3b53c77e5808d88134a">MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE</a>&#160;&#160;&#160;20000</td></tr>
+<tr class="memitem:a6dc832eec948b3b53c77e5808d88134a"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="FastNonAccelStepper_8cpp.html#a6dc832eec948b3b53c77e5808d88134a">MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE</a>&#160;&#160;&#160;(int32_t)20000</td></tr>
 <tr class="separator:a6dc832eec948b3b53c77e5808d88134a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a54db32ff6cb2260a1b41cf207b28d6a2"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="FastNonAccelStepper_8cpp.html#a54db32ff6cb2260a1b41cf207b28d6a2">PWM_DUTY_CYCLE</a>&#160;&#160;&#160;50.0</td></tr>
+<tr class="memitem:a54db32ff6cb2260a1b41cf207b28d6a2"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="FastNonAccelStepper_8cpp.html#a54db32ff6cb2260a1b41cf207b28d6a2">PWM_DUTY_CYCLE</a>&#160;&#160;&#160;50.0f</td></tr>
 <tr class="separator:a54db32ff6cb2260a1b41cf207b28d6a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a85f2db5f58e51264c23b3d3aa6260ba8"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="FastNonAccelStepper_8cpp.html#a85f2db5f58e51264c23b3d3aa6260ba8">PCNT_MIN_MAX_THRESHOLD</a>&#160;&#160;&#160;32767</td></tr>
+<tr class="memitem:a85f2db5f58e51264c23b3d3aa6260ba8"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="FastNonAccelStepper_8cpp.html#a85f2db5f58e51264c23b3d3aa6260ba8">PCNT_MIN_MAX_THRESHOLD</a>&#160;&#160;&#160;32767l</td></tr>
 <tr class="separator:a85f2db5f58e51264c23b3d3aa6260ba8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a86b029649a12b824e4e54eb083f12960"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="FastNonAccelStepper_8cpp.html#a86b029649a12b824e4e54eb083f12960">POSITION_TRIGGER_THRESHOLD</a>&#160;&#160;&#160;1</td></tr>
+<tr class="separator:a86b029649a12b824e4e54eb083f12960"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a id="a6dc832eec948b3b53c77e5808d88134a" name="a6dc832eec948b3b53c77e5808d88134a"></a>
@@ -116,12 +117,12 @@ Macros</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE&#160;&#160;&#160;20000</td>
+          <td class="memname">#define MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE&#160;&#160;&#160;(int32_t)20000</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00013">13</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00012">12</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
 
 </div>
 </div>
@@ -132,12 +133,12 @@ Macros</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define MAX_SPEED_IN_HZ&#160;&#160;&#160;300000</td>
+          <td class="memname">#define MAX_SPEED_IN_HZ&#160;&#160;&#160;(int32_t)250000</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00012">12</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00011">11</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
 
 </div>
 </div>
@@ -148,7 +149,23 @@ Macros</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define PCNT_MIN_MAX_THRESHOLD&#160;&#160;&#160;32767</td>
+          <td class="memname">#define PCNT_MIN_MAX_THRESHOLD&#160;&#160;&#160;32767l</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00014">14</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a86b029649a12b824e4e54eb083f12960" name="a86b029649a12b824e4e54eb083f12960"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a86b029649a12b824e4e54eb083f12960">&#9670;&#160;</a></span>POSITION_TRIGGER_THRESHOLD</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define POSITION_TRIGGER_THRESHOLD&#160;&#160;&#160;1</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -164,12 +181,12 @@ Macros</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define PWM_DUTY_CYCLE&#160;&#160;&#160;50.0</td>
+          <td class="memname">#define PWM_DUTY_CYCLE&#160;&#160;&#160;50.0f</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00014">14</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00013">13</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
 
 </div>
 </div>
