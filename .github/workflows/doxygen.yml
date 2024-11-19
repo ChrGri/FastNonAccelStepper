@@ -29,3 +29,4 @@ jobs:
           folder: html  # Output folder of Doxygen
           branch: gh-pages  # Branch to deploy to
           token: ${{ secrets.DEPLOY_TOKEN }}  # Use the secret
+          target-folder: .  # Deploy to the root of gh-pages
