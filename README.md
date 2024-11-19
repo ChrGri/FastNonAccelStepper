@@ -30,7 +30,11 @@ In Visual Studio Code, add the following to your `platformio.ini` file under `li
    lib_deps =
        https://github.com/ChrGri/FastNonAccelStepper.git
    ```
-	   
+
+
+## Example usage
+Please refer to [examples](https://github.com/ChrGri/FastNonAccelStepper/blob/main/examples/simple/simple.ino) for basic usage.
+
 ## Support 
 
 If you like this library, feel free to support via <br>
