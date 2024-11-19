@@ -1,0 +1,30 @@
+name: Doxygen
+
+on:
+  push:
+    branches:
+      - main  # Run workflow on push to main branch
+
+jobs:
+  doxygen:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive  # Fetch submodules if any
+
+      - name: Install Doxygen
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y doxygen graphviz
+
+      - name: Generate Doxygen documentation
+        run: doxygen Doxyfile
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: html  # Output folder of Doxygen
+          branch: gh-pages  # Branch to deploy to
