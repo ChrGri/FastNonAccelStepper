@@ -23,12 +23,12 @@ jobs:
       - name: Generate Doxygen documentation
         run: doxygen Doxyfile
         
-      - name: Move files to root
-        run: |
-          shopt -s dotglob  # Include hidden files in the move
-          mv html/* .      # Move the contents of 'html' to the current directory
-          shopt -u dotglob  # Reset the dotglob option
-          rmdir html         # Remove the now-empty 'html' directory
+      #- name: Move files to root
+      #  run: |
+      #    shopt -s dotglob  # Include hidden files in the move
+      #    mv html/* .      # Move the contents of 'html' to the current directory
+      #    shopt -u dotglob  # Reset the dotglob option
+      #    rmdir html         # Remove the now-empty 'html' directory
 
       #- name: Deploy to GitHub Pages
       #  uses: JamesIves/github-pages-deploy-action@v4
