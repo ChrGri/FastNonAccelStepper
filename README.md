@@ -19,17 +19,17 @@ For the [iSV57 servo (affiliate link)](https://www.omc-stepperonline.com/de/nema
 
 ## Installation
 
-### Using PlatformIO
+### Using Arduino IDE
+1) Download the library
+2) Add library to Arduino IDE
 
-1. In Visual Studio Code, open the PlatformIO Home by clicking the PlatformIO icon on the sidebar.
-2. Go to **Libraries** > **Library Manager**.
-3. Search for `"YourLibraryName"` and click **Add to Project**.
-4. Alternatively, add the following to your `platformio.ini` file under `lib_deps`:
+### Using PlatformIO
+In Visual Studio Code, add the following to your `platformio.ini` file under `lib_deps`:
 
    ```ini
    lib_deps =
        https://github.com/ChrGri/FastNonAccelStepper.git
-	   
+   ```
 	   
 ## Support 
 
