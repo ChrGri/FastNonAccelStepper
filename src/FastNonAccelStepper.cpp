@@ -3,13 +3,20 @@
 #include <driver/mcpwm.h>
 #include <driver/pcnt.h>
 
-
-
+/************************************************************************/
+/*								Defines 								*/
+/************************************************************************/
 #define MAX_SPEED_IN_HZ 300000
 #define MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE 20000
 #define PWM_DUTY_CYCLE 50.0
 #define PCNT_MIN_MAX_THRESHOLD 32767 // INT16_MAX = (2^15)-1 = 32767
 
+
+
+
+/************************************************************************/
+/*								Implementation							*/
+/************************************************************************/
 FastNonAccelStepper::FastNonAccelStepper()
     : _stepPin(0), _dirPin(0), _targetPosition(0), _maxSpeed(MAX_SPEED_IN_HZ), _overflowCount(0), _pcntQueue(nullptr) {}
 
