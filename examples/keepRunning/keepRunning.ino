@@ -22,10 +22,11 @@ void setup() {
 void loop() {	
 
 
+  float tInSeconds = (float)millis() / 1000.0f;
 
 	// Kepp running in one direction
   // switch every N seconds
-  /*if (fmod(millis()/1000, 10) == 0)
+  if ( fmod(tInSeconds, 20) <= 10)
   {
     stepper.keepRunningForward();
     delay(1000);
@@ -34,10 +35,10 @@ void loop() {
   {
     stepper.keepRunningBackward();
     delay(1000);
-  }*/
+  }
 	
 
-  stepper.keepRunningForward();
+  //stepper.keepRunningForward();
 
 	// Read and print the pulse count
 	long currentPosition = stepper.getCurrentPosition();

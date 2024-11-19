@@ -249,7 +249,7 @@ bool FastNonAccelStepper::isRunning()
 
 bool FastNonAccelStepper::keepRunningInDir(bool forwardDir)
 {
-    mcpwm_stop(MCPWM_UNIT_0, MCPWM_TIMER_0);
+    forceStop();
 
     pcnt_counter_pause(PCNT_UNIT_1);
     pcnt_counter_clear(PCNT_UNIT_1);
@@ -260,7 +260,7 @@ bool FastNonAccelStepper::keepRunningInDir(bool forwardDir)
     pcnt_counter_clear(PCNT_UNIT_1);
     pcnt_counter_resume(PCNT_UNIT_1);
     
-    if (forwardDir)
+    /*if (forwardDir)
     {
         digitalWrite(_dirPin, HIGH);
     }
@@ -269,18 +269,20 @@ bool FastNonAccelStepper::keepRunningInDir(bool forwardDir)
         digitalWrite(_dirPin, LOW);
     }
 
-    _isRunning = true;
-    mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);
+    _isRunning = true;*/
+    //mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);
 }
 
 void FastNonAccelStepper::keepRunningForward()
 {
-    keepRunningInDir(true);
+    //keepRunningInDir(true);
+    move(PCNT_MIN_MAX_THRESHOLD);
 }
 
 void FastNonAccelStepper::keepRunningBackward()
 {
-    keepRunningInDir(false);
+    //keepRunningInDir(false);
+    move(-PCNT_MIN_MAX_THRESHOLD);
 }
 
 
