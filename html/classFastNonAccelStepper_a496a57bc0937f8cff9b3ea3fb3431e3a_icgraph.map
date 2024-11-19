@@ -1,0 +1,4 @@
+<map id="FastNonAccelStepper::initMCPWM" name="FastNonAccelStepper::initMCPWM">
+<area shape="rect" id="node1" title="Initialize the MCPWM module for step signal generation." alt="" coords="212,5,371,47"/>
+<area shape="rect" id="node2" href="$classFastNonAccelStepper.html#a14c45f0a8ad7649e2a995f249f0f5c86" title="Initialize the stepper motor with specified step and direction pins." alt="" coords="5,5,164,47"/>
+</map>

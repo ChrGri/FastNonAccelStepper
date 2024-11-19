@@ -1,0 +1,8 @@
+<map id="FastNonAccelStepper::begin" name="FastNonAccelStepper::begin">
+<area shape="rect" id="node1" title="Initialize the stepper motor with specified step and direction pins." alt="" coords="5,71,164,112"/>
+<area shape="rect" id="node2" href="$classFastNonAccelStepper.html#a496a57bc0937f8cff9b3ea3fb3431e3a" title="Initialize the MCPWM module for step signal generation." alt="" coords="212,5,371,47"/>
+<area shape="rect" id="node3" href="$classFastNonAccelStepper.html#a589c329124c424644085bb84778da3ce" title="Initialize the PCNT module for position control." alt="" coords="212,71,371,112"/>
+<area shape="rect" id="node5" href="$classFastNonAccelStepper.html#a6e74eff853bfa9b90649767b735c1517" title="Initialize the PCNT module for multiturn position tracking." alt="" coords="212,136,371,177"/>
+<area shape="rect" id="node4" href="$classFastNonAccelStepper.html#a6a0bf0e1386b261cdb29c0491ea64341" title="Handle PCNT events for position control." alt="" coords="419,71,577,112"/>
+<area shape="rect" id="node6" href="$classFastNonAccelStepper.html#a7ef0058ae03883a90674a2c73b060137" title="Handle PCNT events for multiturn tracking." alt="" coords="419,136,577,177"/>
+</map>
