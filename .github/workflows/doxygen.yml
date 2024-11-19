@@ -26,6 +26,6 @@ jobs:
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: Doxy  # Output folder of Doxygen
+          folder: html  # Output folder of Doxygen
           branch: gh-pages  # Branch to deploy to
           token: ${{ secrets.DEPLOY_TOKEN }}  # Use the secret
