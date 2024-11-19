@@ -1,0 +1,63 @@
+// PCNT
+
+// Count multi turn position
+1) set up a pcnt unit
+2) set high and low values to a symmatric bound, e.g. pcntBound = +-30000
+	see https://github.com/DevX8000/ESP32-PCNT-Arduino-Example/blob/master/src/main.cpp
+3) set two events
+	a) When lower bound was hit
+		- decrement multi turn counter 
+			multiTurnCounter_si32-;
+	b) When upper bound was hit
+		- increment multi turn counter 
+			multiTurnCounter_si32++;
+		
+4) Calculate multiturn position as 
+	servoPos = multiTurnCounter_si32 * pcntBound + pcnt_get_counter_value()
+	
+	
+// send MCPWM signals
+
+#include <driver/mcpwm.h>
+
+#define PWM_FREQUENCY 300000 // 300 kHz
+#define PWM_DUTY_CYCLE 50.0  // 50% duty cycle
+#define PWM_GPIO_PIN 18      // PWM output pin (connect this to your output device)
+
+bool pwmEnabled = true; // Flag to toggle PWM output
+
+void setup() {
+  Serial.begin(115200);
+  
+  // Initialize the MCPWM GPIO pin
+  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0A, PWM_GPIO_PIN);
+  
+  // Configure the MCPWM unit with frequency and duty cycle
+  mcpwm_config_t pwmConfig;
+  pwmConfig.frequency = PWM_FREQUENCY;         // Set frequency to 300 kHz
+  pwmConfig.cmpr_a = PWM_DUTY_CYCLE;           // Set duty cycle to 50%
+  pwmConfig.cmpr_b = 0.0;                      // Unused in this example
+  pwmConfig.counter_mode = MCPWM_UP_COUNTER;   // Count up mode
+  pwmConfig.duty_mode = MCPWM_DUTY_MODE_0;     // Duty mode 0
+
+  // Initialize MCPWM unit 0, timer 0
+  mcpwm_init(MCPWM_UNIT_0, MCPWM_TIMER_0, &pwmConfig);
+}
+
+void loop() {
+  // Toggle the MCPWM output every second
+  if (pwmEnabled) {
+    mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0); // Start the PWM
+    Serial.println("PWM Enabled");
+  } else {
+    mcpwm_stop(MCPWM_UNIT_0, MCPWM_TIMER_0);  // Stop the PWM
+    Serial.println("PWM Disabled");
+  }
+
+  pwmEnabled = !pwmEnabled;  // Toggle the flag
+  delay(1000);               // Wait for 1 second
+}
+
+
+
+
