@@ -22,6 +22,11 @@ jobs:
 
       - name: Generate Doxygen documentation
         run: doxygen Doxyfile
+        
+      - name: Move files to root
+        run: |
+          mv html/* .
+          rmdir html
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
@@ -29,4 +34,3 @@ jobs:
           folder: html  # Output folder of Doxygen
           branch: gh-pages  # Branch to deploy to
           token: ${{ secrets.DEPLOY_TOKEN }}  # Use the secret
-          target-folder: .  # Deploy to the root of gh-pages

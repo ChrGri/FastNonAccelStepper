@@ -3,6 +3,9 @@
 #include <driver/mcpwm.h>
 #include <driver/pcnt.h>
 
+
+
+
 /************************************************************************/
 /*								Defines 								*/
 /************************************************************************/
@@ -10,6 +13,7 @@
 #define MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE 20000
 #define PWM_DUTY_CYCLE 50.0
 #define PCNT_MIN_MAX_THRESHOLD 32767 // INT16_MAX = (2^15)-1 = 32767
+
 
 
 
