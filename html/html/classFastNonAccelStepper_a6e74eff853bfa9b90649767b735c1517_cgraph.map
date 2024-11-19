@@ -1,0 +1,4 @@
+<map id="FastNonAccelStepper::initPCNTMultiturn" name="FastNonAccelStepper::initPCNTMultiturn">
+<area shape="rect" id="node1" title="Initialize the PCNT module for multiturn position tracking." alt="" coords="5,5,156,45"/>
+<area shape="rect" id="node2" href="$classFastNonAccelStepper.html#a7ef0058ae03883a90674a2c73b060137" title="Handle PCNT events for multiturn tracking." alt="" coords="204,5,355,45"/>
+</map>
