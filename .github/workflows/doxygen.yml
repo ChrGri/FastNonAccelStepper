@@ -20,16 +20,16 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y doxygen graphviz
 
-      #- name: Generate Doxygen documentation
-        #run: doxygen Doxyfile
+      - name: Generate Doxygen documentation
+        run: doxygen Doxyfile
 
-      - name: Doxygen Action
-        uses: mattnotmitt/doxygen-action@v1.9.5
-        with:
-          # Path to Doxyfile
-          doxyfile-path: "./Doxyfile" # default is ./Doxyfile
-          # Working directory
-          working-directory: "." # default is .
+      #- name: Doxygen Action
+      #  uses: mattnotmitt/doxygen-action@v1.9.5
+      #  with:
+      #    # Path to Doxyfile
+      #    doxyfile-path: "./Doxyfile" # default is ./Doxyfile
+      #    # Working directory
+      #    working-directory: "." # default is .
         
       #- name: Move files to root
       #  run: |
@@ -38,19 +38,28 @@ jobs:
       #    shopt -u dotglob  # Reset the dotglob option
       #    rmdir html         # Remove the now-empty 'html' directory
 
-      - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          folder: .  # Output folder of Doxygen
-          branch: gh-pages  # Branch to deploy to
-          token: ${{ secrets.DEPLOY_TOKEN }}  # Use the secret
+      #- name: Deploy to GitHub Pages
+      #  uses: JamesIves/github-pages-deploy-action@v4
+      #  with:
+      #    folder: .  # Output folder of Doxygen
+      #    branch: gh-pages  # Branch to deploy to
+      #    token: ${{ secrets.DEPLOY_TOKEN }}  # Use the secret
 
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+      #- name: Deploy to GitHub Pages
+      #  uses: peaceiris/actions-gh-pages@v3
+      #  with:
+      #    github_token: ${{ secrets.DEPLOY_TOKEN }}
+      #    # Default Doxyfile build documentation to html directory. 
+     #     # Change the directory if changes in Doxyfile
+     #     branch: gh-pages  # Branch to deploy to
+     #     publish_dir: ./html
+
+
+      - uses: DenverCoder1/doxygen-github-pages-action@v2.0.0
         with:
-          github_token: ${{ secrets.DEPLOY_TOKEN }}
-          # Default Doxyfile build documentation to html directory. 
-          # Change the directory if changes in Doxyfile
-          branch: gh-pages  # Branch to deploy to
-          publish_dir: ./html
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: gh-pages
+          folder: docs/html
+          config_file: Doxyfile
+          doxygen_version: 1.9.6
