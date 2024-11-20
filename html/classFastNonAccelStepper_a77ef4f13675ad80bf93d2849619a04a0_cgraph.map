@@ -1,6 +1,6 @@
 <map id="FastNonAccelStepper::forceStopAndNewPosition" name="FastNonAccelStepper::forceStopAndNewPosition">
-<area shape="rect" id="node1" title=" " alt="" coords="5,37,204,77"/>
-<area shape="rect" id="node2" href="$classFastNonAccelStepper.html#a2f1523b3e58a47bedd06d7d686c60a85" title=" " alt="" coords="252,5,411,45"/>
-<area shape="rect" id="node3" href="$classFastNonAccelStepper.html#a17963d2dbf1d38700b2fc558dda7a573" title=" " alt="" coords="252,69,411,109"/>
+<area shape="rect" id="node1" title="Force the stepper motor to stop and set a new current position." alt="" coords="5,37,204,77"/>
+<area shape="rect" id="node2" href="$classFastNonAccelStepper.html#a2f1523b3e58a47bedd06d7d686c60a85" title="Force the stepper motor to stop immediately." alt="" coords="252,5,411,45"/>
+<area shape="rect" id="node3" href="$classFastNonAccelStepper.html#a17963d2dbf1d38700b2fc558dda7a573" title="Set the current position of the stepper motor." alt="" coords="252,69,411,109"/>
 <area shape="rect" id="node4" href="$classFastNonAccelStepper.html#a36ca3f6fb4acfee0a40c13f4adc7b71f" title="Read the current position of the stepper motor." alt="" coords="459,69,617,109"/>
 </map>

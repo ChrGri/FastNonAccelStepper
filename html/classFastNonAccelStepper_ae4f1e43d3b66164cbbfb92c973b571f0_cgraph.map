@@ -1,0 +1,6 @@
+<map id="FastNonAccelStepper::keepRunningBackward" name="FastNonAccelStepper::keepRunningBackward">
+<area shape="rect" id="node1" title="Keep the stepper motor running backward." alt="" coords="5,5,184,45"/>
+<area shape="rect" id="node2" href="$classFastNonAccelStepper.html#ae74fa6feffc21783fb5c74ae4de51de9" title="Keep the stepper motor running in a specified direction." alt="" coords="232,5,391,45"/>
+<area shape="rect" id="node3" href="$classFastNonAccelStepper.html#a2f1523b3e58a47bedd06d7d686c60a85" title="Force the stepper motor to stop immediately." alt="" coords="645,5,804,45"/>
+<area shape="rect" id="node4" href="$classFastNonAccelStepper.html#a0a67e40c7ad919d3075766137ccc543f" title="Set the maximum speed of the stepper motor." alt="" coords="439,33,597,73"/>
+</map>
