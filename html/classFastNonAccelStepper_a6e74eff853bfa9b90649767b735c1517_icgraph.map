@@ -1,4 +1,5 @@
 <map id="FastNonAccelStepper::initPCNTMultiturn" name="FastNonAccelStepper::initPCNTMultiturn">
-<area shape="rect" id="node1" title="Initialize the PCNT module for multiturn position tracking." alt="" coords="212,5,371,45"/>
-<area shape="rect" id="node2" href="$classFastNonAccelStepper.html#a14c45f0a8ad7649e2a995f249f0f5c86" title="Initialize the stepper motor with specified step and direction pins." alt="" coords="5,5,164,45"/>
+<area shape="rect" id="node1" title="Initialize the PCNT module for multiturn position tracking." alt="" coords="427,5,585,45"/>
+<area shape="rect" id="node2" href="$classFastNonAccelStepper.html#a980a5da9747453b101d29b8b3e5024fc" title="Initialize the stepper motor with specified step and direction pins." alt="" coords="220,5,379,45"/>
+<area shape="rect" id="node3" href="$classFastNonAccelStepper.html#a845a234d88fe93df9c2d9b3e883ae68d" title="Constructor to initialize the FastNonAccelStepper." alt="" coords="5,5,172,45"/>
 </map>
