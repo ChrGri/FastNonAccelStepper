@@ -41,9 +41,58 @@ public:
     long getCurrentPosition() const;
 
     /**
-     * @brief Run the stepper motor control logic. Call this frequently in the loop.
+    * @brief Move the stepper motor by a specified number of steps.
+    * @param stepsToMove The number of steps to move (positive for forward, negative for backward).
+    */
+    void move(long stepsToMove);
+
+    /**
+     * @brief Force the stepper motor to stop immediately.
      */
-    void run();
+    void forceStop();
+
+    /**
+     * @brief Set the current position of the stepper motor.
+     * @param newPosition_i32 The new position in steps.
+     */
+    void setCurrentPosition(int32_t newPosition_i32);
+
+    /**
+     * @brief Force the stepper motor to stop and set a new current position.
+     * @param newPosition_i32 The new position in steps.
+     */
+    void forceStopAndNewPosition(int32_t newPosition_i32);
+
+    /**
+     * @brief Check if the stepper motor is currently running.
+     * @return True if the motor is running, false otherwise.
+     */
+    bool isRunning();
+
+    /**
+     * @brief Keep the stepper motor running in a specified direction.
+     * @param forwardDir True to run forward, false to run backward.
+     * @param speed The speed at which to run the motor in Hz.
+     */
+    void keepRunningInDir(bool forwardDir, uint32_t speed);
+
+    /**
+     * @brief Keep the stepper motor running forward.
+     * @param speed The speed at which to run the motor in Hz.
+     */
+    void keepRunningForward(uint32_t speed);
+
+    /**
+     * @brief Keep the stepper motor running backward.
+     * @param speed The speed at which to run the motor in Hz.
+     */
+    void keepRunningBackward(uint32_t speed);
+
+    /**
+     * @brief Get the motor's position after all commanded moves are completed.
+     * @return The final position in steps.
+     */
+    int32_t getPositionAfterCommandsCompleted();
 
 private:
     uint8_t _stepPin;          ///< Step pin number.
@@ -82,21 +131,7 @@ private:
      * @brief Handle PCNT events for position control.
      * @param arg ISR argument.
      */
-    static void IRAM_ATTR controlPCNTISR(void* arg);
-
-
-
-
-public:
-    void move(long stepsToMove);
-
-    void forceStop();
-    void setCurrentPosition(int32_t newPosition_i32);
-    void forceStopAndNewPosition(int32_t newPosition_i32);
-    bool isRunning();
-    bool keepRunningInDir(bool forwardDir);
-    void keepRunningForward();
-    void keepRunningBackward();
+    static void IRAM_ATTR controlPCNTISR(void* arg); 
 
 };
 

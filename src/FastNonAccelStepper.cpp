@@ -100,6 +100,7 @@ void FastNonAccelStepper::move(long stepsToMove) {
 void FastNonAccelStepper::moveTo(long targetPos) {
     long currentPos = getCurrentPosition();
     long positionChange = constrain(targetPos - currentPos, -MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE, MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE);
+    _targetPosition = currentPos + positionChange;
     move(positionChange);
 } 
 
@@ -109,9 +110,6 @@ long FastNonAccelStepper::getCurrentPosition() const {
     return ((long)_overflowCount * (long)PCNT_MIN_MAX_THRESHOLD) + (long)pulseCount - _zeroPosition_i32;
 }
 
-void FastNonAccelStepper::run() {
-    moveTo(_targetPosition);
-}
 
 void FastNonAccelStepper::initMCPWM() {
     mcpwm_config_t pwmConfig;
@@ -210,17 +208,12 @@ void IRAM_ATTR FastNonAccelStepper::controlPCNTISR(void* arg) {
     }
 }
 
-
-
-
-
 void FastNonAccelStepper::forceStop()
 {
     // stop mcpwm
     mcpwm_stop(MCPWM_UNIT_0, MCPWM_TIMER_0);
     _isRunning = false;
 }  
-
 
 void FastNonAccelStepper::setCurrentPosition(int32_t newPosition_i32)
 {
@@ -231,7 +224,6 @@ void FastNonAccelStepper::setCurrentPosition(int32_t newPosition_i32)
     _zeroPosition_i32 = newZeroPos_i32;
 }
 
-
 void FastNonAccelStepper::forceStopAndNewPosition(int32_t newPosition_i32)
 {
     // stop mcpwm
@@ -241,13 +233,12 @@ void FastNonAccelStepper::forceStopAndNewPosition(int32_t newPosition_i32)
     setCurrentPosition(newPosition_i32);
 }   
 
-
 bool FastNonAccelStepper::isRunning()
 {
     return _isRunning;
 }
 
-bool FastNonAccelStepper::keepRunningInDir(bool forwardDir)
+void FastNonAccelStepper::keepRunningInDir(bool forwardDir, uint32_t speed)
 {
     forceStop();
 
@@ -259,8 +250,10 @@ bool FastNonAccelStepper::keepRunningInDir(bool forwardDir)
 
     pcnt_counter_clear(PCNT_UNIT_1);
     pcnt_counter_resume(PCNT_UNIT_1);
+
+    setMaxSpeed(speed); 
     
-    /*if (forwardDir)
+    if (forwardDir)
     {
         digitalWrite(_dirPin, HIGH);
     }
@@ -269,20 +262,23 @@ bool FastNonAccelStepper::keepRunningInDir(bool forwardDir)
         digitalWrite(_dirPin, LOW);
     }
 
-    _isRunning = true;*/
-    //mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);
+    _isRunning = true;
+    mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);
 }
 
-void FastNonAccelStepper::keepRunningForward()
+void FastNonAccelStepper::keepRunningForward(uint32_t speed)
 {
-    //keepRunningInDir(true);
-    move(PCNT_MIN_MAX_THRESHOLD);
+    keepRunningInDir(true, speed);
 }
 
-void FastNonAccelStepper::keepRunningBackward()
+void FastNonAccelStepper::keepRunningBackward(uint32_t speed)
 {
-    //keepRunningInDir(false);
-    move(-PCNT_MIN_MAX_THRESHOLD);
+    keepRunningInDir(false, speed);
+}
+
+int32_t FastNonAccelStepper::getPositionAfterCommandsCompleted()
+{
+  return _targetPosition;
 }
 
 

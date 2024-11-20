@@ -24,16 +24,17 @@ void loop() {
 
   float tInSeconds = (float)millis() / 1000.0f;
 
+  uint32_t speed = 100000;
 	// Kepp running in one direction
   // switch every N seconds
   if ( fmod(tInSeconds, 20) <= 10)
   {
-    stepper.keepRunningForward();
+    stepper.keepRunningForward(speed);
     delay(1000);
   }
   else
   {
-    stepper.keepRunningBackward();
+    stepper.keepRunningBackward(speed);
     delay(1000);
   }
 	
