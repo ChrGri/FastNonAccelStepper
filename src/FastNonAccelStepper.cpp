@@ -6,28 +6,48 @@
 
 
 /************************************************************************/
-/*								Defines 								*/
+/*								Defines 								                              */
 /************************************************************************/
-#define MAX_SPEED_IN_HZ (int32_t)400000
+#define MAX_SPEED_IN_HZ (int32_t)500000
 #define MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE (int32_t)20000
 #define PWM_DUTY_CYCLE 50.0f
 #define PCNT_MIN_MAX_THRESHOLD 32767l // INT16_MAX = (2^15)-1 = 32767
 #define POSITION_TRIGGER_THRESHOLD 1
-#define PCNT_FILTER_VALUE 10
+#define PCNT_FILTER_VALUE 1
+#define MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP 50
 
 
 /************************************************************************/
-/*								Implementation							*/
+/*								Implementation							                          */
 /************************************************************************/
-FastNonAccelStepper::FastNonAccelStepper()
-    : _stepPin(0), _dirPin(0), _targetPosition(0), _maxSpeed(MAX_SPEED_IN_HZ), _overflowCount(0), _pcntQueue(nullptr) {}
+FastNonAccelStepper::FastNonAccelStepper(uint8_t stepPin, uint8_t dirPin, bool invertMotorDir)
+    : _stepPin(stepPin), _dirPin(dirPin), _targetPosition(0), _maxSpeed(MAX_SPEED_IN_HZ), _overflowCount(0), _pcntQueue(nullptr), _invertMotorDirection(invertMotorDir) 
+    {
+      _stepper = this;  // Assign the current instance to _stepper
+      _stepper->begin(_stepPin, _dirPin, _invertMotorDirection);
+    }
 
-void FastNonAccelStepper::begin(uint8_t stepPin, uint8_t dirPin) {
-    _stepPin = stepPin;
-    _dirPin = dirPin;
-    _maxSpeed = MAX_SPEED_IN_HZ;
+void FastNonAccelStepper::begin(uint8_t stepPin, uint8_t dirPin, bool invertMotorDir) {
+  
+    // set dir logic for counting
+    // 1) If invertMotorDir == false, the DIR_PIN == HIGH, when motor moving forward and DIR_PIN == LOW, when motor moving backwards
+    // 2) If invertMotorDir == false, the PCNT counter should go up, when DIR_PIN == HIGH
+    if (false == invertMotorDir)
+    {
+      _dir_level_forward_b = HIGH;
+      _dir_level_backward_b = LOW;
+      _dir_pcnt_lctrl_mode_b = PCNT_MODE_REVERSE;
+      _dir_pcnt_hctrl_mode_b = PCNT_MODE_KEEP;
+    }
+    else
+    {
+      _dir_level_forward_b = LOW;
+      _dir_level_backward_b = HIGH;
+      _dir_pcnt_lctrl_mode_b = PCNT_MODE_KEEP;
+      _dir_pcnt_hctrl_mode_b = PCNT_MODE_REVERSE;
+    }
 
-	// init MCPWM and PCNTs
+    // init MCPWM and PCNTs
     initMCPWM();
     initPCNTMultiturn();
     initPCNTControl();
@@ -37,16 +57,16 @@ void FastNonAccelStepper::begin(uint8_t stepPin, uint8_t dirPin) {
     digitalWrite(_stepPin, LOW);
     digitalWrite(_dirPin, LOW);
 
-	// configure pin modes
-	mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0A, _stepPin);
+    // configure pin modes
+    mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0A, _stepPin);
 
-	// connect PCNT to GPIO pin
-	gpio_iomux_in(_stepPin, PCNT_SIG_CH0_IN0_IDX);
-	gpio_iomux_in(_stepPin, PCNT_SIG_CH0_IN1_IDX);
+    // connect PCNT to GPIO pin
+    gpio_iomux_in(_stepPin, PCNT_SIG_CH0_IN0_IDX);
+    gpio_iomux_in(_stepPin, PCNT_SIG_CH0_IN1_IDX);
 
-	// reset pcnt counters
-	pcnt_counter_clear(PCNT_UNIT_0);
-	pcnt_counter_clear(PCNT_UNIT_1);
+    // reset pcnt counters
+    pcnt_counter_clear(PCNT_UNIT_0);
+    pcnt_counter_clear(PCNT_UNIT_1);
 
     // make sure mcpwm is stopped
     forceStop();
@@ -62,23 +82,39 @@ void FastNonAccelStepper::setMaxSpeed(uint32_t speed) {
         mcpwm_set_frequency(MCPWM_UNIT_0, MCPWM_TIMER_0, _maxSpeed);
         forceStop();
     } else {
-        //mcpwm_stop(MCPWM_UNIT_0, MCPWM_TIMER_0);
         forceStop();
     }
 }
 
 
 void FastNonAccelStepper::move(long stepsToMove) {
-    long positionChange = constrain(stepsToMove, -MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE, MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE);
+    
+    // stop previous move
+    forceStop();
 
-    mcpwm_stop(MCPWM_UNIT_0, MCPWM_TIMER_0);
+
+    long positionChange = constrain(stepsToMove, -MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE, MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE);
 
     int16_t absPositionChange = abs(positionChange);
 
     if (absPositionChange > POSITION_TRIGGER_THRESHOLD) {
-        int16_t highLimit = absPositionChange - 1; // subtract one, since count limit is triggered after value is exceeded
-        int16_t lowLimit = -highLimit;
 
+        int16_t highLimit;
+        int16_t lowLimit;
+        // 1) set DIR pin
+        // 2) define upper limit for control pcnt
+        // 3) define lower limit for control pcnt
+        if (positionChange > 0) {
+            digitalWrite(_dirPin, _dir_level_forward_b);
+            highLimit = absPositionChange - 1;
+            lowLimit = -MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP;
+        } else {
+            digitalWrite(_dirPin, _dir_level_backward_b);
+            highLimit = MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP;
+            lowLimit = -(absPositionChange - 1);
+        }
+
+        // parameterize control pcnt
         pcnt_counter_pause(PCNT_UNIT_1);
         pcnt_counter_clear(PCNT_UNIT_1);
         pcnt_set_event_value(PCNT_UNIT_1, PCNT_EVT_H_LIM, highLimit);
@@ -86,11 +122,7 @@ void FastNonAccelStepper::move(long stepsToMove) {
         pcnt_counter_clear(PCNT_UNIT_1);
         pcnt_counter_resume(PCNT_UNIT_1);
 
-        if (positionChange > 0) {
-            digitalWrite(_dirPin, HIGH);
-        } else {
-            digitalWrite(_dirPin, LOW);
-        }
+        // start mcpwm
         _isRunning = true;
         mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);
     }
@@ -130,8 +162,8 @@ void FastNonAccelStepper::initPCNTMultiturn() {
     pcntConfig.unit = PCNT_UNIT_0;
     pcntConfig.pos_mode = PCNT_COUNT_INC;
     pcntConfig.neg_mode = PCNT_COUNT_DIS;
-    pcntConfig.lctrl_mode = PCNT_MODE_REVERSE;
-    pcntConfig.hctrl_mode = PCNT_MODE_KEEP;
+    pcntConfig.lctrl_mode = (pcnt_ctrl_mode_t)_dir_pcnt_lctrl_mode_b;
+    pcntConfig.hctrl_mode = (pcnt_ctrl_mode_t)_dir_pcnt_hctrl_mode_b;
     pcntConfig.counter_h_lim = PCNT_MIN_MAX_THRESHOLD;
     pcntConfig.counter_l_lim = -PCNT_MIN_MAX_THRESHOLD;
 
@@ -162,8 +194,8 @@ void FastNonAccelStepper::initPCNTControl() {
     pcntConfig.unit = PCNT_UNIT_1;
     pcntConfig.pos_mode = PCNT_COUNT_INC;
     pcntConfig.neg_mode = PCNT_COUNT_DIS;
-    pcntConfig.lctrl_mode = PCNT_MODE_REVERSE;
-    pcntConfig.hctrl_mode = PCNT_MODE_KEEP;
+    pcntConfig.lctrl_mode = (pcnt_ctrl_mode_t)_dir_pcnt_lctrl_mode_b;
+    pcntConfig.hctrl_mode = (pcnt_ctrl_mode_t)_dir_pcnt_hctrl_mode_b;
     pcntConfig.counter_h_lim = PCNT_MIN_MAX_THRESHOLD;
     pcntConfig.counter_l_lim = -PCNT_MIN_MAX_THRESHOLD;
 
@@ -203,7 +235,6 @@ void IRAM_ATTR FastNonAccelStepper::controlPCNTISR(void* arg) {
     pcnt_get_event_status(PCNT_UNIT_1, &status);
 
     if (status & PCNT_EVT_H_LIM || status & PCNT_EVT_L_LIM) {
-        //mcpwm_stop(MCPWM_UNIT_0, MCPWM_TIMER_0);
         instance->forceStop();
     }
 }
@@ -255,11 +286,11 @@ void FastNonAccelStepper::keepRunningInDir(bool forwardDir, uint32_t speed)
     
     if (forwardDir)
     {
-        digitalWrite(_dirPin, HIGH);
+        digitalWrite(_dirPin, _dir_level_forward_b);
     }
     else
     {
-        digitalWrite(_dirPin, LOW);
+        digitalWrite(_dirPin, _dir_level_backward_b);
     }
 
     _isRunning = true;

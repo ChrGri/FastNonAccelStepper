@@ -13,14 +13,7 @@ public:
     /**
      * @brief Constructor to initialize the FastNonAccelStepper.
      */
-    FastNonAccelStepper();
-
-    /**
-     * @brief Initialize the stepper motor with specified step and direction pins.
-     * @param stepPin The GPIO pin connected to the step input of the stepper motor driver.
-     * @param dirPin The GPIO pin connected to the direction input of the stepper motor driver.
-     */
-    void begin(uint8_t stepPin, uint8_t dirPin);
+    FastNonAccelStepper(uint8_t stepPin, uint8_t dirPin, bool invertMotorDir);
 
     /**
      * @brief Set the maximum speed of the stepper motor.
@@ -94,7 +87,11 @@ public:
      */
     int32_t getPositionAfterCommandsCompleted();
 
+
+    
+
 private:
+    FastNonAccelStepper* _stepper;
     uint8_t _stepPin;          ///< Step pin number.
     uint8_t _dirPin;           ///< Direction pin number.
     long _targetPosition;      ///< Target position in steps.
@@ -103,6 +100,14 @@ private:
 
     int32_t _zeroPosition_i32 = 0;
     bool _isRunning = false;
+    bool _invertMotorDirection = false;
+
+    // Variable to store the DIR pin logic
+    bool _dir_level_forward_b = true;
+    bool _dir_level_backward_b = false;
+    uint8_t _dir_pcnt_lctrl_mode_b = 0;
+    uint8_t _dir_pcnt_hctrl_mode_b = 0;
+
 
     xQueueHandle _pcntQueue;   ///< Queue to handle PCNT events.
 
@@ -132,6 +137,15 @@ private:
      * @param arg ISR argument.
      */
     static void IRAM_ATTR controlPCNTISR(void* arg); 
+
+    /**
+     * @brief Initialize the stepper motor with specified step and direction pins.
+     * @param stepPin The GPIO pin connected to the step input of the stepper motor driver.
+     * @param dirPin The GPIO pin connected to the direction input of the stepper motor driver.
+     * @param invertMotorDir Invert the direction pin logic.
+     */
+    void begin(uint8_t stepPin, uint8_t dirPin, bool invertMotorDir);
+
 
 };
 

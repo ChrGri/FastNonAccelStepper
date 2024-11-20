@@ -2,9 +2,6 @@
 #include "FastNonAccelStepper.h"
 
 
-float sineFrequencyInHz = 1;
-float sineAmplitudeInSteps = 1000;
-
 
 int dirPin = 18;
 int pulPin = 19;
@@ -14,7 +11,9 @@ FastNonAccelStepper stepper(pulPin, dirPin, false);
 
 void setup() {
     Serial.begin(115200);
-    stepper.setMaxSpeed(1000);
+    stepper.setMaxSpeed(100);
+
+    delay(2000);
 }
 
 
@@ -26,11 +25,9 @@ void loop() {
 
   float tInSeconds = (float)millis() / 1000.0f;
 
-  uint32_t speed = 3000;
+  uint32_t speed = 10000;
   
   stepper.setMaxSpeed(speed);
-
-  stepper.setCurrentPosition(-1000);
 
   long currentPosition = stepper.getCurrentPosition();
   //Serial.printf("targetPos:%d, retTargetPos:%d, currentPos:%d\n", targetPos, returnedTargetPos, currentPosition);

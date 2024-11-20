@@ -9,12 +9,11 @@ float sineAmplitudeInSteps = 1000;
 int dirPin = 18;
 int pulPin = 19;
 
-FastNonAccelStepper stepper;
+FastNonAccelStepper stepper(pulPin, dirPin, false);
 
 
 void setup() {
     Serial.begin(115200);
-    stepper.begin(pulPin, dirPin);
     stepper.setMaxSpeed(1000);
 }
 
