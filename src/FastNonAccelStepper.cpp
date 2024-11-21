@@ -87,53 +87,95 @@ void FastNonAccelStepper::setMaxSpeed(uint32_t speed) {
 }
 
 
-void FastNonAccelStepper::move(long stepsToMove) {
+void FastNonAccelStepper::move(long stepsToMove, bool blocking) {
     
     // stop previous move
     forceStop();
 
+    long absStepsToMove = abs(stepsToMove);
 
-    long positionChange = constrain(stepsToMove, -MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE, MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE);
+    if (absStepsToMove > POSITION_TRIGGER_THRESHOLD) {
 
-    int16_t absPositionChange = abs(positionChange);
+      // calculate number of required pcnt wraps
+      long numbWraps = 0; //absStepsToMove / PCNT_MIN_MAX_THRESHOLD;
 
-    if (absPositionChange > POSITION_TRIGGER_THRESHOLD) {
-
-        int16_t highLimit;
-        int16_t lowLimit;
-        // 1) set DIR pin
-        // 2) define upper limit for control pcnt
-        // 3) define lower limit for control pcnt
-        if (positionChange > 0) {
-            digitalWrite(_dirPin, _dir_level_forward_b);
-            highLimit = absPositionChange - 1;
-            lowLimit = -MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP;
-        } else {
-            digitalWrite(_dirPin, _dir_level_backward_b);
-            highLimit = MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP;
-            lowLimit = -(absPositionChange - 1);
+      long absStepsToMove_helper = absStepsToMove;
+      for (uint8_t idx = 0; idx < 100; idx++)
+      {
+        if (absStepsToMove_helper > PCNT_MIN_MAX_THRESHOLD)
+        {
+          absStepsToMove_helper -= PCNT_MIN_MAX_THRESHOLD;
+          numbWraps++;
         }
+        else
+        {
+          break;
+        }
+      }
 
-        // parameterize control pcnt
-        pcnt_counter_pause(PCNT_UNIT_1);
-        pcnt_counter_clear(PCNT_UNIT_1);
-        pcnt_set_event_value(PCNT_UNIT_1, PCNT_EVT_H_LIM, highLimit);
-        pcnt_set_event_value(PCNT_UNIT_1, PCNT_EVT_L_LIM, lowLimit);
-        pcnt_counter_clear(PCNT_UNIT_1);
-        pcnt_counter_resume(PCNT_UNIT_1);
+      long limit;
+      if (numbWraps > 0)
+      {
+        limit = absStepsToMove / numbWraps;
+      }
+      else
+      {
+        limit = absStepsToMove;
+      }
 
-        // start mcpwm
-        _isRunning = true;
-        mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);
+      int16_t limit_i16 = constrain(limit, 0, PCNT_MIN_MAX_THRESHOLD);
+
+      
+
+      int16_t highLimit;
+      int16_t lowLimit;
+      // 1) set DIR pin
+      // 2) define upper limit for control pcnt
+      // 3) define lower limit for control pcnt
+      if (stepsToMove > 0) {
+          digitalWrite(_dirPin, _dir_level_forward_b);
+          highLimit = limit_i16;//absPositionChange - 1;
+          lowLimit = -MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP;
+          _overflowCountControl = numbWraps;
+      } else {
+          digitalWrite(_dirPin, _dir_level_backward_b);
+          highLimit = MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP;
+          lowLimit = -limit_i16;//-(absPositionChange - 1);
+          _overflowCountControl = numbWraps;
+      }
+
+      // parameterize control pcnt
+      pcnt_counter_pause(PCNT_UNIT_1);
+      pcnt_counter_clear(PCNT_UNIT_1);
+      pcnt_set_event_value(PCNT_UNIT_1, PCNT_EVT_H_LIM, highLimit);
+      pcnt_set_event_value(PCNT_UNIT_1, PCNT_EVT_L_LIM, lowLimit);
+      pcnt_counter_clear(PCNT_UNIT_1);
+      pcnt_counter_resume(PCNT_UNIT_1);
+
+      // start mcpwm
+      _isRunning = true;
+      mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);
+
+      if (blocking)
+      {
+        while(isRunning())
+        {
+          delay(1);
+        }
+      }
+      
+
     }
 }
 
 
-void FastNonAccelStepper::moveTo(long targetPos) {
+void FastNonAccelStepper::moveTo(long targetPos, bool blocking) {
     long currentPos = getCurrentPosition();
-    long positionChange = constrain(targetPos - currentPos, -MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE, MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE);
-    _targetPosition = currentPos + positionChange;
-    move(positionChange);
+    //long positionChange = constrain(targetPos - currentPos, -MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE, MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE);
+    long positionChange = targetPos - currentPos;
+    _targetPosition = targetPos;
+    //_targetPosition = currentPos + positionChange;
+    move(positionChange, blocking);
 } 
 
 long FastNonAccelStepper::getCurrentPosition() const {
@@ -235,7 +277,12 @@ void IRAM_ATTR FastNonAccelStepper::controlPCNTISR(void* arg) {
     pcnt_get_event_status(PCNT_UNIT_1, &status);
 
     if (status & PCNT_EVT_H_LIM || status & PCNT_EVT_L_LIM) {
+
+      if (instance->_overflowCountControl < 1)
+      {
         instance->forceStop();
+      }
+      instance->_overflowCountControl--;
     }
 }
 

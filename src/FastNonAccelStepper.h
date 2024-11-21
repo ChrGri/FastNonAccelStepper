@@ -24,8 +24,9 @@ public:
     /**
      * @brief Update the target position for the stepper motor.
      * @param targetPos The desired target position in steps.
+     * @param blocking Wait until the move has finished.
      */
-    void moveTo(long targetPos);
+    void moveTo(long targetPos, bool blocking);
 
     /**
      * @brief Read the current position of the stepper motor.
@@ -36,8 +37,9 @@ public:
     /**
     * @brief Move the stepper motor by a specified number of steps.
     * @param stepsToMove The number of steps to move (positive for forward, negative for backward).
+    * @param blocking Wait until the move has finished.
     */
-    void move(long stepsToMove);
+    void move(long stepsToMove, bool blocking);
 
     /**
      * @brief Force the stepper motor to stop immediately.
@@ -97,6 +99,7 @@ private:
     long _targetPosition;      ///< Target position in steps.
     uint32_t _maxSpeed;            ///< Maximum speed in Hz.
     volatile int _overflowCount; ///< Overflow count for multiturn position tracking.
+    volatile int _overflowCountControl; ///< Overflow count for control position tracking.
 
     int32_t _zeroPosition_i32 = 0;
     bool _isRunning = false;

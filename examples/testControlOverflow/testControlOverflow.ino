@@ -1,14 +1,14 @@
 #include <Arduino.h>
 
-//#define NON_ACCEL_STEPPER
+#define NON_ACCEL_STEPPER
 #ifdef NON_ACCEL_STEPPER
   #include "FastNonAccelStepper.h"
 #else
   #include "FastAccelStepper.h"
 #endif
 
-float sineFrequencyInHz = 1;
-float sineAmplitudeInSteps = 500;
+float sineFrequencyInHz = 10;
+float sineAmplitudeInSteps = 1000;
 
 
 int dirPin = 22;
@@ -30,7 +30,7 @@ void setup() {
   //Serial.begin(115200);
 
   #ifdef NON_ACCEL_STEPPER
-    stepper.setMaxSpeed(5000);
+    stepper.setMaxSpeed(300000);
   #else
     engine.init();
     stepper2 = engine.stepperConnectToPin(pulPin2);
@@ -50,16 +50,6 @@ void setup() {
       //stepper->setSpeedInTicks( maxSpeedInTicks ); // ticks
       stepper2->setSpeedInUs( 2 ); // ticks
       stepper2->setAcceleration(INT32_MAX);  // steps/s²
-
-      float maxAccel = (2 * M_PI * sineFrequencyInHz);
-      maxAccel *= maxAccel;
-      maxAccel *= sineAmplitudeInSteps;
-      maxAccel *= 2;
-      int32_t maxAccel_i32 = (int32_t)maxAccel;
-
-      Serial.printf("\n\n\nMax accel: %d\n\n\n", maxAccel_i32);
-      //stepper2->setAcceleration(maxAccel_i32);  // steps/s²
-
       stepper2->setLinearAcceleration(0);
       stepper2->setForwardPlanningTimeInMs(1);
 
@@ -75,7 +65,7 @@ void setup() {
 
 
 
-    delay(2000);
+  
 
 
 }
@@ -89,12 +79,16 @@ void loop() {
 
 
   // choose target pattern
-  uint8_t targetPattern_u8 = 1;
+  uint8_t targetPattern_u8 = 0;
   float targetPos_fl32 = 0;
   switch (targetPattern_u8) {
     case 0:
-      targetPosition += 500;                                // Increment target position cyclically
-      if (targetPosition > 50000) targetPosition = -50000;  // Reset after reaching max range
+      targetPosition += 1000;                                // Increment target position cyclically
+      if (targetPosition > (5 * 32767)) 
+      {
+        targetPosition = -500000;  // Reset after reaching max range
+        delay(100);
+      }
       break;
     case 1:
       // sine wave
@@ -115,7 +109,7 @@ void loop() {
   long currentPosition;
   long currentPosition2;
   #ifdef NON_ACCEL_STEPPER
-    stepper.moveTo(targetPosition);
+    stepper.moveTo(targetPosition, true);
     // Read and print the pulse count
     currentPosition = stepper.getCurrentPosition();
   #else
@@ -147,11 +141,11 @@ void loop() {
     //Serial.printf("%d %d %d\n", millis(), targetPosition, currentPosition);
 
     Serial.printf("%d %d %d\n", targetPosition, currentPosition, currentPosition2);
-    
-    
-
+  
   }
+
+  
   
 
-  delayMicroseconds(500);  // Adjust delay as needed
+  delayMicroseconds(200);  // Adjust delay as needed
 }
