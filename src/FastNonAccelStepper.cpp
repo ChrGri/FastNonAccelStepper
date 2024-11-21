@@ -21,7 +21,7 @@
 /*								Implementation							                          */
 /************************************************************************/
 FastNonAccelStepper::FastNonAccelStepper(uint8_t stepPin, uint8_t dirPin, bool invertMotorDir)
-    : _stepPin(stepPin), _dirPin(dirPin), _targetPosition(0), _maxSpeed(MAX_SPEED_IN_HZ), _overflowCount(0), _pcntQueue(nullptr), _invertMotorDirection(invertMotorDir) 
+    : _stepPin(stepPin), _dirPin(dirPin), _targetPosition(0), _maxSpeed(MAX_SPEED_IN_HZ), _overflowCount(0), _pcntQueue(nullptr), _invertMotorDirection(invertMotorDir), _zeroPosition_i32(0)
     {
       _stepper = this;  // Assign the current instance to _stepper
       _stepper->begin(_stepPin, _dirPin, _invertMotorDirection);
@@ -34,17 +34,17 @@ void FastNonAccelStepper::begin(uint8_t stepPin, uint8_t dirPin, bool invertMoto
     // 2) If invertMotorDir == false, the PCNT counter should go up, when DIR_PIN == HIGH
     if (false == invertMotorDir)
     {
-      _dir_level_forward_b = HIGH;
-      _dir_level_backward_b = LOW;
-      _dir_pcnt_lctrl_mode_b = PCNT_MODE_REVERSE;
-      _dir_pcnt_hctrl_mode_b = PCNT_MODE_KEEP;
-    }
-    else
-    {
       _dir_level_forward_b = LOW;
       _dir_level_backward_b = HIGH;
       _dir_pcnt_lctrl_mode_b = PCNT_MODE_KEEP;
       _dir_pcnt_hctrl_mode_b = PCNT_MODE_REVERSE;
+    }
+    else
+    {
+      _dir_level_forward_b = HIGH;
+      _dir_level_backward_b = LOW;
+      _dir_pcnt_lctrl_mode_b = PCNT_MODE_REVERSE;
+      _dir_pcnt_hctrl_mode_b = PCNT_MODE_KEEP;
     }
 
     // init MCPWM and PCNTs
@@ -149,8 +149,12 @@ void FastNonAccelStepper::move(long stepsToMove, bool blocking) {
       pcnt_counter_clear(PCNT_UNIT_1);
       pcnt_set_event_value(PCNT_UNIT_1, PCNT_EVT_H_LIM, highLimit);
       pcnt_set_event_value(PCNT_UNIT_1, PCNT_EVT_L_LIM, lowLimit);
+      pcnt_event_enable(PCNT_UNIT_1, PCNT_EVT_H_LIM); 
+      pcnt_event_enable(PCNT_UNIT_1, PCNT_EVT_L_LIM);
       pcnt_counter_clear(PCNT_UNIT_1);
       pcnt_counter_resume(PCNT_UNIT_1);
+
+      //Serial.printf("Hlim: %d,    LLim: %d,    wraps: %d\n", highLimit, lowLimit, numbWraps);
 
       // start mcpwm
       _isRunning = true;
@@ -161,6 +165,11 @@ void FastNonAccelStepper::move(long stepsToMove, bool blocking) {
         while(isRunning())
         {
           delay(1);
+
+          /*int16_t pulseCountlcl = 0;
+          pcnt_get_counter_value(PCNT_UNIT_1, &pulseCountlcl);
+          Serial.printf( "CurPos: %d,    CtrlPos:%d,    overfl: %d\n", getCurrentPosition(), pulseCountlcl, _overflowCountControl);
+          delay(30);*/
         }
       }
       
@@ -276,6 +285,7 @@ void IRAM_ATTR FastNonAccelStepper::controlPCNTISR(void* arg) {
     uint32_t status;
     pcnt_get_event_status(PCNT_UNIT_1, &status);
 
+    //Serial.println("X\n");
     if (status & PCNT_EVT_H_LIM || status & PCNT_EVT_L_LIM) {
 
       if (instance->_overflowCountControl < 1)
