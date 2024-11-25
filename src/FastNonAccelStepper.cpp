@@ -157,6 +157,7 @@ void FastNonAccelStepper::move(long stepsToMove, bool blocking) {
       //Serial.printf("Hlim: %d,    LLim: %d,    wraps: %d\n", highLimit, lowLimit, numbWraps);
 
       // start mcpwm
+      delayMicroseconds(5);
       _isRunning = true;
       mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);
 
@@ -350,6 +351,7 @@ void FastNonAccelStepper::keepRunningInDir(bool forwardDir, uint32_t speed)
         digitalWrite(_dirPin, _dir_level_backward_b);
     }
 
+    delayMicroseconds(5);	
     _isRunning = true;
     mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);
 }
