@@ -1,4 +1,4 @@
 <map id="FastNonAccelStepper::move" name="FastNonAccelStepper::move">
 <area shape="rect" id="node1" title="Move the stepper motor by a specified number of steps." alt="" coords="212,5,371,45"/>
-<area shape="rect" id="node2" href="$classFastNonAccelStepper.html#a592ad0bf0fd39bfaa68c120fd10896d6" title="Update the target position for the stepper motor." alt="" coords="5,5,164,45"/>
+<area shape="rect" id="node2" href="$classFastNonAccelStepper.html#a14dc3724be4a90707b19c9cf6e772125" title="Update the target position for the stepper motor." alt="" coords="5,5,164,45"/>
 </map>

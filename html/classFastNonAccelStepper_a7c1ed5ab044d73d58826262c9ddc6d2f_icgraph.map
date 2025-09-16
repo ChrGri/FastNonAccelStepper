@@ -1,4 +1,4 @@
 <map id="FastNonAccelStepper::setCurrentPosition" name="FastNonAccelStepper::setCurrentPosition">
 <area shape="rect" id="node1" title="Set the current position of the stepper motor." alt="" coords="252,5,411,45"/>
-<area shape="rect" id="node2" href="$classFastNonAccelStepper.html#a77ef4f13675ad80bf93d2849619a04a0" title="Force the stepper motor to stop and set a new current position." alt="" coords="5,5,204,45"/>
+<area shape="rect" id="node2" href="$classFastNonAccelStepper.html#a890585273649646e4f3e10f4deb8de6e" title="Force the stepper motor to stop and set a new current position." alt="" coords="5,5,204,45"/>
 </map>

@@ -1,0 +1,14 @@
+<map id="FastNonAccelStepper::forceStop" name="FastNonAccelStepper::forceStop">
+<area shape="rect" id="node1" title="Force the stepper motor to stop immediately." alt="" coords="900,151,1059,191"/>
+<area shape="rect" id="node2" href="$classFastNonAccelStepper.html#a980a5da9747453b101d29b8b3e5024fc" title="Initialize the stepper motor with specified step and direction pins." alt="" coords="230,29,389,69"/>
+<area shape="rect" id="node4" href="$classFastNonAccelStepper.html#a6a0bf0e1386b261cdb29c0491ea64341" title="Handle PCNT events for position control." alt="" coords="673,57,832,97"/>
+<area shape="rect" id="node6" href="$classFastNonAccelStepper.html#a890585273649646e4f3e10f4deb8de6e" title="Force the stepper motor to stop and set a new current position." alt="" coords="653,121,852,161"/>
+<area shape="rect" id="node7" href="$classFastNonAccelStepper.html#a7bddbcf6d2477480bbe2f0fceeb24413" title="Keep the stepper motor running in a specified direction." alt="" coords="447,211,605,251"/>
+<area shape="rect" id="node10" href="$classFastNonAccelStepper.html#a147b71cdebfb914a3ba0a03c79ff57da" title="Move the stepper motor by a specified number of steps." alt="" coords="673,300,832,340"/>
+<area shape="rect" id="node12" href="$classFastNonAccelStepper.html#ab1c78c8d709b7345e1b2c87eaf0ebb08" title="Set the maximum speed of the stepper motor." alt="" coords="673,236,832,276"/>
+<area shape="rect" id="node3" href="$classFastNonAccelStepper.html#a845a234d88fe93df9c2d9b3e883ae68d" title="Constructor to initialize the FastNonAccelStepper." alt="" coords="5,29,172,69"/>
+<area shape="rect" id="node5" href="$classFastNonAccelStepper.html#a589c329124c424644085bb84778da3ce" title="Initialize the PCNT module for position control." alt="" coords="447,57,605,97"/>
+<area shape="rect" id="node8" href="$classFastNonAccelStepper.html#ac37f0390bf4ec441ddb2cfd0961ebc51" title="Keep the stepper motor running backward." alt="" coords="220,179,399,219"/>
+<area shape="rect" id="node9" href="$classFastNonAccelStepper.html#aad4e5d905e3cc977646e9bd8d13664a2" title="Keep the stepper motor running forward." alt="" coords="226,243,393,283"/>
+<area shape="rect" id="node11" href="$classFastNonAccelStepper.html#a14dc3724be4a90707b19c9cf6e772125" title="Update the target position for the stepper motor." alt="" coords="447,300,605,340"/>
+</map>
