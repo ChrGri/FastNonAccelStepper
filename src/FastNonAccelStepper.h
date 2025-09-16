@@ -17,9 +17,15 @@ public:
 
     /**
      * @brief Set the maximum speed of the stepper motor.
-     * @param speed Maximum speed in Hz.
+     * @param Maximum speed in Hz.
      */
     void setMaxSpeed(uint32_t speed);
+	
+	/**
+     * @brief Get the maximum speed of the stepper motor.
+     * @return Maximum speed in Hz.
+     */
+    uint32_t getMaxSpeed(void);
 
     /**
      * @brief Update the target position for the stepper motor.

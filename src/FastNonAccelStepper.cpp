@@ -86,6 +86,11 @@ void FastNonAccelStepper::setMaxSpeed(uint32_t speed) {
     }
 }
 
+uint32_t FastNonAccelStepper::getMaxSpeed(void) {
+    // Constrain the speed to valid limits
+    return _maxSpeed;
+}
+
 
 void FastNonAccelStepper::move(long stepsToMove, bool blocking) {
     
@@ -330,6 +335,15 @@ bool FastNonAccelStepper::isRunning()
 void FastNonAccelStepper::keepRunningInDir(bool forwardDir, uint32_t speed)
 {
     forceStop();
+	
+	if (forwardDir)
+    {
+        digitalWrite(_dirPin, _dir_level_forward_b);
+    }
+    else
+    {
+        digitalWrite(_dirPin, _dir_level_backward_b);
+    }
 
     pcnt_counter_pause(PCNT_UNIT_1);
     pcnt_counter_clear(PCNT_UNIT_1);
@@ -342,14 +356,7 @@ void FastNonAccelStepper::keepRunningInDir(bool forwardDir, uint32_t speed)
 
     setMaxSpeed(speed); 
     
-    if (forwardDir)
-    {
-        digitalWrite(_dirPin, _dir_level_forward_b);
-    }
-    else
-    {
-        digitalWrite(_dirPin, _dir_level_backward_b);
-    }
+    
 
     delayMicroseconds(5);	
     _isRunning = true;
