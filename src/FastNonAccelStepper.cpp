@@ -73,7 +73,7 @@ void FastNonAccelStepper::begin(uint8_t stepPin, uint8_t dirPin, bool invertMoto
 	  
 }
 
-void FastNonAccelStepper::setMaxSpeed(uint32_t speed) {
+void IRAM_ATTR FastNonAccelStepper::setMaxSpeed(uint32_t speed) {
     // Constrain the speed to valid limits
     _maxSpeed = constrain(speed, 1, MAX_SPEED_IN_HZ);
 
@@ -86,13 +86,13 @@ void FastNonAccelStepper::setMaxSpeed(uint32_t speed) {
     }
 }
 
-uint32_t FastNonAccelStepper::getMaxSpeed(void) {
+uint32_t IRAM_ATTR FastNonAccelStepper::getMaxSpeed(void) {
     // Constrain the speed to valid limits
     return _maxSpeed;
 }
 
 
-void FastNonAccelStepper::move(long stepsToMove, bool blocking) {
+void IRAM_ATTR FastNonAccelStepper::move(long stepsToMove, bool blocking) {
     
     // stop previous move
     forceStop();
@@ -184,7 +184,7 @@ void FastNonAccelStepper::move(long stepsToMove, bool blocking) {
 }
 
 
-void FastNonAccelStepper::moveTo(long targetPos, bool blocking) {
+void IRAM_ATTR FastNonAccelStepper::moveTo(long targetPos, bool blocking) {
     long currentPos = getCurrentPosition();
     //long positionChange = constrain(targetPos - currentPos, -MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE, MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE);
     long positionChange = targetPos - currentPos;
@@ -193,7 +193,7 @@ void FastNonAccelStepper::moveTo(long targetPos, bool blocking) {
     move(positionChange, blocking);
 } 
 
-long FastNonAccelStepper::getCurrentPosition() const {
+long IRAM_ATTR FastNonAccelStepper::getCurrentPosition() const {
     int16_t pulseCount = 0;
     pcnt_get_counter_value(PCNT_UNIT_0, &pulseCount);
     return ((long)_overflowCount * (long)PCNT_MIN_MAX_THRESHOLD) + (long)pulseCount - _zeroPosition_i32;
@@ -302,14 +302,14 @@ void IRAM_ATTR FastNonAccelStepper::controlPCNTISR(void* arg) {
     }
 }
 
-void FastNonAccelStepper::forceStop()
+void IRAM_ATTR FastNonAccelStepper::forceStop()
 {
     // stop mcpwm
     mcpwm_stop(MCPWM_UNIT_0, MCPWM_TIMER_0);
     _isRunning = false;
 }  
 
-void FastNonAccelStepper::setCurrentPosition(int32_t newPosition_i32)
+void IRAM_ATTR FastNonAccelStepper::setCurrentPosition(int32_t newPosition_i32)
 {
     // set new position
     // newPosition_i32 = (getCurrentPosition + oldZeroPos) - (newZeroPos)
@@ -318,7 +318,7 @@ void FastNonAccelStepper::setCurrentPosition(int32_t newPosition_i32)
     _zeroPosition_i32 = newZeroPos_i32;
 }
 
-void FastNonAccelStepper::forceStopAndNewPosition(int32_t newPosition_i32)
+void IRAM_ATTR FastNonAccelStepper::forceStopAndNewPosition(int32_t newPosition_i32)
 {
     // stop mcpwm
     forceStop();
@@ -327,12 +327,12 @@ void FastNonAccelStepper::forceStopAndNewPosition(int32_t newPosition_i32)
     setCurrentPosition(newPosition_i32);
 }   
 
-bool FastNonAccelStepper::isRunning()
+bool IRAM_ATTR FastNonAccelStepper::isRunning()
 {
     return _isRunning;
 }
 
-void FastNonAccelStepper::keepRunningInDir(bool forwardDir, uint32_t speed)
+void IRAM_ATTR FastNonAccelStepper::keepRunningInDir(bool forwardDir, uint32_t speed)
 {
     forceStop();
 	
@@ -363,17 +363,17 @@ void FastNonAccelStepper::keepRunningInDir(bool forwardDir, uint32_t speed)
     mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);
 }
 
-void FastNonAccelStepper::keepRunningForward(uint32_t speed)
+void IRAM_ATTR FastNonAccelStepper::keepRunningForward(uint32_t speed)
 {
     keepRunningInDir(true, speed);
 }
 
-void FastNonAccelStepper::keepRunningBackward(uint32_t speed)
+void IRAM_ATTR FastNonAccelStepper::keepRunningBackward(uint32_t speed)
 {
     keepRunningInDir(false, speed);
 }
 
-int32_t FastNonAccelStepper::getPositionAfterCommandsCompleted()
+int32_t IRAM_ATTR FastNonAccelStepper::getPositionAfterCommandsCompleted()
 {
   return _targetPosition;
 }
