@@ -49,8 +49,8 @@ void FastNonAccelStepper::begin(uint8_t stepPin, uint8_t dirPin, bool invertMoto
 
     // init MCPWM and PCNTs
     initMCPWM();
-    initPCNTMultiturn();
-    initPCNTControl();
+    initPCNTMultiturn(); // unit to track the overall position
+    initPCNTControl(); // unit to controll the step bursts
 
     pinMode(_stepPin, OUTPUT);
     pinMode(_dirPin, OUTPUT);
@@ -61,12 +61,12 @@ void FastNonAccelStepper::begin(uint8_t stepPin, uint8_t dirPin, bool invertMoto
     mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0A, _stepPin);
 
     // connect PCNT to GPIO pin
-    gpio_iomux_in(_stepPin, PCNT_SIG_CH0_IN0_IDX);
-    gpio_iomux_in(_stepPin, PCNT_SIG_CH0_IN1_IDX);
+    gpio_iomux_in(_stepPin, PCNT_SIG_CH0_IN0_IDX); // overall position unit
+    gpio_iomux_in(_stepPin, PCNT_SIG_CH0_IN1_IDX); // controll unit
 
     // reset pcnt counters
-    pcnt_counter_clear(PCNT_UNIT_0);
-    pcnt_counter_clear(PCNT_UNIT_1);
+    pcnt_counter_clear(PCNT_UNIT_0); // overall position unit
+    pcnt_counter_clear(PCNT_UNIT_1); // controll unit
 
     // make sure mcpwm is stopped
     forceStop();
@@ -101,36 +101,23 @@ void IRAM_ATTR FastNonAccelStepper::move(long stepsToMove, bool blocking) {
 
     if (absStepsToMove > POSITION_TRIGGER_THRESHOLD) {
 
-      // calculate number of required pcnt wraps
-      long numbWraps = 0; //absStepsToMove / PCNT_MIN_MAX_THRESHOLD;
+	  // MATLAB code:
+	  // PCNT_MIN_MAX_THRESHOLD = 32767; absStepsToMove = 2*PCNT_MIN_MAX_THRESHOLD; nmbWraps = idivide( int32(absStepsToMove) , int32(PCNT_MIN_MAX_THRESHOLD) ); limit = absStepsToMove / (nmbWraps+1)
 
-      long absStepsToMove_helper = absStepsToMove;
-      for (uint8_t idx = 0; idx < 100; idx++)
-      {
-        if (absStepsToMove_helper > PCNT_MIN_MAX_THRESHOLD)
-        {
-          absStepsToMove_helper -= PCNT_MIN_MAX_THRESHOLD;
-          numbWraps++;
-        }
-        else
-        {
-          break;
-        }
-      }
+		
+	  // compute the number of wraps
+	  long numbWraps = absStepsToMove / PCNT_MIN_MAX_THRESHOLD;
 
+	  // divide into equally spaced bursts, e.g. when 
+	  // if absStepsToMove is < PCNT_MIN_MAX_THRESHOLD --> numbWraps = 0 and limit_i16 = absStepsToMove
+	  // if absStepsToMove == PCNT_MIN_MAX_THRESHOLD --> numbWraps = 1 and limit_i16 = absStepsToMove/2
+	  // if absStepsToMove == 2*PCNT_MIN_MAX_THRESHOLD --> numbWraps = 2 and limit_i16 = absStepsToMove/3
+	  // if absStepsToMove > PCNT_MIN_MAX_THRESHOLD --> numbWraps >= 1
       long limit;
-      if (numbWraps > 0)
-      {
-        limit = absStepsToMove / numbWraps;
-      }
-      else
-      {
-        limit = absStepsToMove;
-      }
-
+      limit = absStepsToMove / (numbWraps + 1);
       int16_t limit_i16 = constrain(limit, 0, PCNT_MIN_MAX_THRESHOLD);
 
-      
+	  // the highLimit | lowLimit will be hit numbWraps, before stopping the PWM output
 
       int16_t highLimit;
       int16_t lowLimit;
@@ -304,8 +291,13 @@ void IRAM_ATTR FastNonAccelStepper::controlPCNTISR(void* arg) {
 
 void IRAM_ATTR FastNonAccelStepper::forceStop()
 {
-    // stop mcpwm
+    // Immediately force the step pin to a known inactive state (LOW).
+    // This prevents an extra step pulse from completing after the stop command is issued from the ISR.
+    mcpwm_set_signal_low(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A);
+
+    // Now, schedule the timer to stop cleanly at the end of its cycle.
     mcpwm_stop(MCPWM_UNIT_0, MCPWM_TIMER_0);
+    
     _isRunning = false;
 }  
 
