@@ -8,7 +8,6 @@
 /************************************************************************/
 /*								Defines 								                              */
 /************************************************************************/
-#define MAX_SPEED_IN_HZ (int32_t)500000
 #define MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE (int32_t)20000
 #define PWM_DUTY_CYCLE 50.0f
 #define PCNT_MIN_MAX_THRESHOLD 32767l // INT16_MAX = (2^15)-1 = 32767
@@ -307,7 +306,7 @@ void IRAM_ATTR FastNonAccelStepper::forceStop()
 {
     // Immediately force the step pin to a known inactive state (LOW).
     // This prevents an extra step pulse from completing after the stop command is issued from the ISR.
-    mcpwm_set_signal_low(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A);
+    // mcpwm_set_signal_low(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A);
 
     // Now, schedule the timer to stop cleanly at the end of its cycle.
     mcpwm_stop(MCPWM_UNIT_0, MCPWM_TIMER_0);
