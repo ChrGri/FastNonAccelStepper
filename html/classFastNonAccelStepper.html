@@ -356,8 +356,8 @@ Here is the call graph for this function:</div>
 <div class="line"><span class="lineno">   49</span> </div>
 <div class="line"><span class="lineno">   50</span>    <span class="comment">// init MCPWM and PCNTs</span></div>
 <div class="line"><span class="lineno">   51</span>    <a class="code hl_function" href="classFastNonAccelStepper.html#a496a57bc0937f8cff9b3ea3fb3431e3a">initMCPWM</a>();</div>
-<div class="line"><span class="lineno">   52</span>    <a class="code hl_function" href="classFastNonAccelStepper.html#a6e74eff853bfa9b90649767b735c1517">initPCNTMultiturn</a>();</div>
-<div class="line"><span class="lineno">   53</span>    <a class="code hl_function" href="classFastNonAccelStepper.html#a589c329124c424644085bb84778da3ce">initPCNTControl</a>();</div>
+<div class="line"><span class="lineno">   52</span>    <a class="code hl_function" href="classFastNonAccelStepper.html#a6e74eff853bfa9b90649767b735c1517">initPCNTMultiturn</a>(); <span class="comment">// unit to track the overall position</span></div>
+<div class="line"><span class="lineno">   53</span>    <a class="code hl_function" href="classFastNonAccelStepper.html#a589c329124c424644085bb84778da3ce">initPCNTControl</a>(); <span class="comment">// unit to controll the step bursts</span></div>
 <div class="line"><span class="lineno">   54</span> </div>
 <div class="line"><span class="lineno">   55</span>    pinMode(<a class="code hl_variable" href="classFastNonAccelStepper.html#a44184b1e11284252832381ae32025c4b">_stepPin</a>, OUTPUT);</div>
 <div class="line"><span class="lineno">   56</span>    pinMode(<a class="code hl_variable" href="classFastNonAccelStepper.html#abe2c601b0b30d214f0ffa1cf2fd827b3">_dirPin</a>, OUTPUT);</div>
@@ -368,12 +368,12 @@ Here is the call graph for this function:</div>
 <div class="line"><span class="lineno">   61</span>    mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0A, <a class="code hl_variable" href="classFastNonAccelStepper.html#a44184b1e11284252832381ae32025c4b">_stepPin</a>);</div>
 <div class="line"><span class="lineno">   62</span> </div>
 <div class="line"><span class="lineno">   63</span>    <span class="comment">// connect PCNT to GPIO pin</span></div>
-<div class="line"><span class="lineno">   64</span>    gpio_iomux_in(<a class="code hl_variable" href="classFastNonAccelStepper.html#a44184b1e11284252832381ae32025c4b">_stepPin</a>, PCNT_SIG_CH0_IN0_IDX);</div>
-<div class="line"><span class="lineno">   65</span>    gpio_iomux_in(<a class="code hl_variable" href="classFastNonAccelStepper.html#a44184b1e11284252832381ae32025c4b">_stepPin</a>, PCNT_SIG_CH0_IN1_IDX);</div>
+<div class="line"><span class="lineno">   64</span>    gpio_iomux_in(<a class="code hl_variable" href="classFastNonAccelStepper.html#a44184b1e11284252832381ae32025c4b">_stepPin</a>, PCNT_SIG_CH0_IN0_IDX); <span class="comment">// overall position unit</span></div>
+<div class="line"><span class="lineno">   65</span>    gpio_iomux_in(<a class="code hl_variable" href="classFastNonAccelStepper.html#a44184b1e11284252832381ae32025c4b">_stepPin</a>, PCNT_SIG_CH0_IN1_IDX); <span class="comment">// controll unit</span></div>
 <div class="line"><span class="lineno">   66</span> </div>
 <div class="line"><span class="lineno">   67</span>    <span class="comment">// reset pcnt counters</span></div>
-<div class="line"><span class="lineno">   68</span>    pcnt_counter_clear(PCNT_UNIT_0);</div>
-<div class="line"><span class="lineno">   69</span>    pcnt_counter_clear(PCNT_UNIT_1);</div>
+<div class="line"><span class="lineno">   68</span>    pcnt_counter_clear(PCNT_UNIT_0); <span class="comment">// overall position unit</span></div>
+<div class="line"><span class="lineno">   69</span>    pcnt_counter_clear(PCNT_UNIT_1); <span class="comment">// controll unit</span></div>
 <div class="line"><span class="lineno">   70</span> </div>
 <div class="line"><span class="lineno">   71</span>    <span class="comment">// make sure mcpwm is stopped</span></div>
 <div class="line"><span class="lineno">   72</span>    <a class="code hl_function" href="classFastNonAccelStepper.html#abd6a0e3d93e72abd9648ee83ff6033bb">forceStop</a>();</div>
@@ -382,10 +382,10 @@ Here is the call graph for this function:</div>
 <div class="ttc" id="aclassFastNonAccelStepper_html_a0568a00afb6ea1e836bfcd29bea362d2"><div class="ttname"><a href="classFastNonAccelStepper.html#a0568a00afb6ea1e836bfcd29bea362d2">FastNonAccelStepper::_dir_pcnt_hctrl_mode_b</a></div><div class="ttdeci">uint8_t _dir_pcnt_hctrl_mode_b</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8h_source.html#l00118">FastNonAccelStepper.h:118</a></div></div>
 <div class="ttc" id="aclassFastNonAccelStepper_html_a194a8999a065669cf6dcca4841de258b"><div class="ttname"><a href="classFastNonAccelStepper.html#a194a8999a065669cf6dcca4841de258b">FastNonAccelStepper::_dir_level_forward_b</a></div><div class="ttdeci">bool _dir_level_forward_b</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8h_source.html#l00115">FastNonAccelStepper.h:115</a></div></div>
 <div class="ttc" id="aclassFastNonAccelStepper_html_a1dbab92a6ee6664f0bd924f182e000cc"><div class="ttname"><a href="classFastNonAccelStepper.html#a1dbab92a6ee6664f0bd924f182e000cc">FastNonAccelStepper::_dir_level_backward_b</a></div><div class="ttdeci">bool _dir_level_backward_b</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8h_source.html#l00116">FastNonAccelStepper.h:116</a></div></div>
-<div class="ttc" id="aclassFastNonAccelStepper_html_a496a57bc0937f8cff9b3ea3fb3431e3a"><div class="ttname"><a href="classFastNonAccelStepper.html#a496a57bc0937f8cff9b3ea3fb3431e3a">FastNonAccelStepper::initMCPWM</a></div><div class="ttdeci">void initMCPWM()</div><div class="ttdoc">Initialize the MCPWM module for step signal generation.</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00203">FastNonAccelStepper.cpp:203</a></div></div>
-<div class="ttc" id="aclassFastNonAccelStepper_html_a589c329124c424644085bb84778da3ce"><div class="ttname"><a href="classFastNonAccelStepper.html#a589c329124c424644085bb84778da3ce">FastNonAccelStepper::initPCNTControl</a></div><div class="ttdeci">void initPCNTControl()</div><div class="ttdoc">Initialize the PCNT module for position control.</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00246">FastNonAccelStepper.cpp:246</a></div></div>
-<div class="ttc" id="aclassFastNonAccelStepper_html_a6e74eff853bfa9b90649767b735c1517"><div class="ttname"><a href="classFastNonAccelStepper.html#a6e74eff853bfa9b90649767b735c1517">FastNonAccelStepper::initPCNTMultiturn</a></div><div class="ttdeci">void initPCNTMultiturn()</div><div class="ttdoc">Initialize the PCNT module for multiturn position tracking.</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00214">FastNonAccelStepper.cpp:214</a></div></div>
-<div class="ttc" id="aclassFastNonAccelStepper_html_abd6a0e3d93e72abd9648ee83ff6033bb"><div class="ttname"><a href="classFastNonAccelStepper.html#abd6a0e3d93e72abd9648ee83ff6033bb">FastNonAccelStepper::forceStop</a></div><div class="ttdeci">void forceStop()</div><div class="ttdoc">Force the stepper motor to stop immediately.</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00305">FastNonAccelStepper.cpp:305</a></div></div>
+<div class="ttc" id="aclassFastNonAccelStepper_html_a496a57bc0937f8cff9b3ea3fb3431e3a"><div class="ttname"><a href="classFastNonAccelStepper.html#a496a57bc0937f8cff9b3ea3fb3431e3a">FastNonAccelStepper::initMCPWM</a></div><div class="ttdeci">void initMCPWM()</div><div class="ttdoc">Initialize the MCPWM module for step signal generation.</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00190">FastNonAccelStepper.cpp:190</a></div></div>
+<div class="ttc" id="aclassFastNonAccelStepper_html_a589c329124c424644085bb84778da3ce"><div class="ttname"><a href="classFastNonAccelStepper.html#a589c329124c424644085bb84778da3ce">FastNonAccelStepper::initPCNTControl</a></div><div class="ttdeci">void initPCNTControl()</div><div class="ttdoc">Initialize the PCNT module for position control.</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00233">FastNonAccelStepper.cpp:233</a></div></div>
+<div class="ttc" id="aclassFastNonAccelStepper_html_a6e74eff853bfa9b90649767b735c1517"><div class="ttname"><a href="classFastNonAccelStepper.html#a6e74eff853bfa9b90649767b735c1517">FastNonAccelStepper::initPCNTMultiturn</a></div><div class="ttdeci">void initPCNTMultiturn()</div><div class="ttdoc">Initialize the PCNT module for multiturn position tracking.</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00201">FastNonAccelStepper.cpp:201</a></div></div>
+<div class="ttc" id="aclassFastNonAccelStepper_html_abd6a0e3d93e72abd9648ee83ff6033bb"><div class="ttname"><a href="classFastNonAccelStepper.html#abd6a0e3d93e72abd9648ee83ff6033bb">FastNonAccelStepper::forceStop</a></div><div class="ttdeci">void forceStop()</div><div class="ttdoc">Force the stepper motor to stop immediately.</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00292">FastNonAccelStepper.cpp:292</a></div></div>
 <div class="ttc" id="aclassFastNonAccelStepper_html_abf77199adbac7a5591baff5ae701b429"><div class="ttname"><a href="classFastNonAccelStepper.html#abf77199adbac7a5591baff5ae701b429">FastNonAccelStepper::_dir_pcnt_lctrl_mode_b</a></div><div class="ttdeci">uint8_t _dir_pcnt_lctrl_mode_b</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8h_source.html#l00117">FastNonAccelStepper.h:117</a></div></div>
 </div><!-- fragment --><div class="dynheader">
 Here is the call graph for this function:</div>
@@ -445,22 +445,22 @@ Here is the caller graph for this function:</div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00289">289</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
-<div class="fragment"><div class="line"><span class="lineno">  289</span>                                                            {</div>
-<div class="line"><span class="lineno">  290</span>    <a class="code hl_class" href="classFastNonAccelStepper.html">FastNonAccelStepper</a>* instance = <span class="keyword">static_cast&lt;</span><a class="code hl_class" href="classFastNonAccelStepper.html">FastNonAccelStepper</a>*<span class="keyword">&gt;</span>(arg);</div>
-<div class="line"><span class="lineno">  291</span>    uint32_t status;</div>
-<div class="line"><span class="lineno">  292</span>    pcnt_get_event_status(PCNT_UNIT_1, &amp;status);</div>
-<div class="line"><span class="lineno">  293</span> </div>
-<div class="line"><span class="lineno">  294</span>    <span class="comment">//Serial.println(&quot;X\n&quot;);</span></div>
-<div class="line"><span class="lineno">  295</span>    <span class="keywordflow">if</span> (status &amp; PCNT_EVT_H_LIM || status &amp; PCNT_EVT_L_LIM) {</div>
-<div class="line"><span class="lineno">  296</span> </div>
-<div class="line"><span class="lineno">  297</span>      <span class="keywordflow">if</span> (instance-&gt;<a class="code hl_variable" href="classFastNonAccelStepper.html#ae0b3a6d038fe9acb028513c9a321b7b7">_overflowCountControl</a> &lt; 1)</div>
-<div class="line"><span class="lineno">  298</span>      {</div>
-<div class="line"><span class="lineno">  299</span>        instance-&gt;<a class="code hl_function" href="classFastNonAccelStepper.html#abd6a0e3d93e72abd9648ee83ff6033bb">forceStop</a>();</div>
-<div class="line"><span class="lineno">  300</span>      }</div>
-<div class="line"><span class="lineno">  301</span>      instance-&gt;<a class="code hl_variable" href="classFastNonAccelStepper.html#ae0b3a6d038fe9acb028513c9a321b7b7">_overflowCountControl</a>--;</div>
-<div class="line"><span class="lineno">  302</span>    }</div>
-<div class="line"><span class="lineno">  303</span>}</div>
+<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00276">276</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  276</span>                                                            {</div>
+<div class="line"><span class="lineno">  277</span>    <a class="code hl_class" href="classFastNonAccelStepper.html">FastNonAccelStepper</a>* instance = <span class="keyword">static_cast&lt;</span><a class="code hl_class" href="classFastNonAccelStepper.html">FastNonAccelStepper</a>*<span class="keyword">&gt;</span>(arg);</div>
+<div class="line"><span class="lineno">  278</span>    uint32_t status;</div>
+<div class="line"><span class="lineno">  279</span>    pcnt_get_event_status(PCNT_UNIT_1, &amp;status);</div>
+<div class="line"><span class="lineno">  280</span> </div>
+<div class="line"><span class="lineno">  281</span>    <span class="comment">//Serial.println(&quot;X\n&quot;);</span></div>
+<div class="line"><span class="lineno">  282</span>    <span class="keywordflow">if</span> (status &amp; PCNT_EVT_H_LIM || status &amp; PCNT_EVT_L_LIM) {</div>
+<div class="line"><span class="lineno">  283</span> </div>
+<div class="line"><span class="lineno">  284</span>      <span class="keywordflow">if</span> (instance-&gt;<a class="code hl_variable" href="classFastNonAccelStepper.html#ae0b3a6d038fe9acb028513c9a321b7b7">_overflowCountControl</a> &lt; 1)</div>
+<div class="line"><span class="lineno">  285</span>      {</div>
+<div class="line"><span class="lineno">  286</span>        instance-&gt;<a class="code hl_function" href="classFastNonAccelStepper.html#abd6a0e3d93e72abd9648ee83ff6033bb">forceStop</a>();</div>
+<div class="line"><span class="lineno">  287</span>      }</div>
+<div class="line"><span class="lineno">  288</span>      instance-&gt;<a class="code hl_variable" href="classFastNonAccelStepper.html#ae0b3a6d038fe9acb028513c9a321b7b7">_overflowCountControl</a>--;</div>
+<div class="line"><span class="lineno">  289</span>    }</div>
+<div class="line"><span class="lineno">  290</span>}</div>
 <div class="ttc" id="aclassFastNonAccelStepper_html"><div class="ttname"><a href="classFastNonAccelStepper.html">FastNonAccelStepper</a></div><div class="ttdoc">A class to control a stepper motor using ESP32's MCPWM and PCNT modules.</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8h_source.html#l00011">FastNonAccelStepper.h:11</a></div></div>
 <div class="ttc" id="aclassFastNonAccelStepper_html_ae0b3a6d038fe9acb028513c9a321b7b7"><div class="ttname"><a href="classFastNonAccelStepper.html#ae0b3a6d038fe9acb028513c9a321b7b7">FastNonAccelStepper::_overflowCountControl</a></div><div class="ttdeci">volatile int _overflowCountControl</div><div class="ttdoc">Overflow count for control position tracking.</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8h_source.html#l00108">FastNonAccelStepper.h:108</a></div></div>
 </div><!-- fragment --><div class="dynheader">
@@ -503,12 +503,17 @@ Here is the caller graph for this function:</div>
 
 <p>Force the stepper motor to stop immediately. </p>
 
-<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00305">305</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
-<div class="fragment"><div class="line"><span class="lineno">  306</span>{</div>
-<div class="line"><span class="lineno">  307</span>    <span class="comment">// stop mcpwm</span></div>
-<div class="line"><span class="lineno">  308</span>    mcpwm_stop(MCPWM_UNIT_0, MCPWM_TIMER_0);</div>
-<div class="line"><span class="lineno">  309</span>    <a class="code hl_variable" href="classFastNonAccelStepper.html#a1792aff3753f27058002b924ab8c1876">_isRunning</a> = <span class="keyword">false</span>;</div>
-<div class="line"><span class="lineno">  310</span>}  </div>
+<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00292">292</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  293</span>{</div>
+<div class="line"><span class="lineno">  294</span>    <span class="comment">// Immediately force the step pin to a known inactive state (LOW).</span></div>
+<div class="line"><span class="lineno">  295</span>    <span class="comment">// This prevents an extra step pulse from completing after the stop command is issued from the ISR.</span></div>
+<div class="line"><span class="lineno">  296</span>    mcpwm_set_signal_low(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A);</div>
+<div class="line"><span class="lineno">  297</span> </div>
+<div class="line"><span class="lineno">  298</span>    <span class="comment">// Now, schedule the timer to stop cleanly at the end of its cycle.</span></div>
+<div class="line"><span class="lineno">  299</span>    mcpwm_stop(MCPWM_UNIT_0, MCPWM_TIMER_0);</div>
+<div class="line"><span class="lineno">  300</span>    </div>
+<div class="line"><span class="lineno">  301</span>    <a class="code hl_variable" href="classFastNonAccelStepper.html#a1792aff3753f27058002b924ab8c1876">_isRunning</a> = <span class="keyword">false</span>;</div>
+<div class="line"><span class="lineno">  302</span>}  </div>
 <div class="ttc" id="aclassFastNonAccelStepper_html_a1792aff3753f27058002b924ab8c1876"><div class="ttname"><a href="classFastNonAccelStepper.html#a1792aff3753f27058002b924ab8c1876">FastNonAccelStepper::_isRunning</a></div><div class="ttdeci">bool _isRunning</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8h_source.html#l00111">FastNonAccelStepper.h:111</a></div></div>
 </div><!-- fragment --><div class="dynheader">
 Here is the caller graph for this function:</div>
@@ -556,15 +561,15 @@ Here is the caller graph for this function:</div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00321">321</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
-<div class="fragment"><div class="line"><span class="lineno">  322</span>{</div>
-<div class="line"><span class="lineno">  323</span>    <span class="comment">// stop mcpwm</span></div>
-<div class="line"><span class="lineno">  324</span>    <a class="code hl_function" href="classFastNonAccelStepper.html#abd6a0e3d93e72abd9648ee83ff6033bb">forceStop</a>();</div>
-<div class="line"><span class="lineno">  325</span> </div>
-<div class="line"><span class="lineno">  326</span>    <span class="comment">// set new position</span></div>
-<div class="line"><span class="lineno">  327</span>    <a class="code hl_function" href="classFastNonAccelStepper.html#a7c1ed5ab044d73d58826262c9ddc6d2f">setCurrentPosition</a>(newPosition_i32);</div>
-<div class="line"><span class="lineno">  328</span>}   </div>
-<div class="ttc" id="aclassFastNonAccelStepper_html_a7c1ed5ab044d73d58826262c9ddc6d2f"><div class="ttname"><a href="classFastNonAccelStepper.html#a7c1ed5ab044d73d58826262c9ddc6d2f">FastNonAccelStepper::setCurrentPosition</a></div><div class="ttdeci">void setCurrentPosition(int32_t newPosition_i32)</div><div class="ttdoc">Set the current position of the stepper motor.</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00312">FastNonAccelStepper.cpp:312</a></div></div>
+<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00313">313</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  314</span>{</div>
+<div class="line"><span class="lineno">  315</span>    <span class="comment">// stop mcpwm</span></div>
+<div class="line"><span class="lineno">  316</span>    <a class="code hl_function" href="classFastNonAccelStepper.html#abd6a0e3d93e72abd9648ee83ff6033bb">forceStop</a>();</div>
+<div class="line"><span class="lineno">  317</span> </div>
+<div class="line"><span class="lineno">  318</span>    <span class="comment">// set new position</span></div>
+<div class="line"><span class="lineno">  319</span>    <a class="code hl_function" href="classFastNonAccelStepper.html#a7c1ed5ab044d73d58826262c9ddc6d2f">setCurrentPosition</a>(newPosition_i32);</div>
+<div class="line"><span class="lineno">  320</span>}   </div>
+<div class="ttc" id="aclassFastNonAccelStepper_html_a7c1ed5ab044d73d58826262c9ddc6d2f"><div class="ttname"><a href="classFastNonAccelStepper.html#a7c1ed5ab044d73d58826262c9ddc6d2f">FastNonAccelStepper::setCurrentPosition</a></div><div class="ttdeci">void setCurrentPosition(int32_t newPosition_i32)</div><div class="ttdoc">Set the current position of the stepper motor.</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00304">FastNonAccelStepper.cpp:304</a></div></div>
 </div><!-- fragment --><div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
@@ -597,12 +602,12 @@ Here is the call graph for this function:</div>
 <p>Read the current position of the stepper motor. </p>
 <dl class="section return"><dt>Returns</dt><dd>The current position in steps. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00196">196</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
-<div class="fragment"><div class="line"><span class="lineno">  196</span>                                                             {</div>
-<div class="line"><span class="lineno">  197</span>    int16_t pulseCount = 0;</div>
-<div class="line"><span class="lineno">  198</span>    pcnt_get_counter_value(PCNT_UNIT_0, &amp;pulseCount);</div>
-<div class="line"><span class="lineno">  199</span>    <span class="keywordflow">return</span> ((<span class="keywordtype">long</span>)<a class="code hl_variable" href="classFastNonAccelStepper.html#a899dd9ea157d164e660bb15055f0a53d">_overflowCount</a> * (<span class="keywordtype">long</span>)<a class="code hl_define" href="FastNonAccelStepper_8cpp.html#a85f2db5f58e51264c23b3d3aa6260ba8">PCNT_MIN_MAX_THRESHOLD</a>) + (long)pulseCount - <a class="code hl_variable" href="classFastNonAccelStepper.html#ad47dada977c9127a6feab21cba2ad2a4">_zeroPosition_i32</a>;</div>
-<div class="line"><span class="lineno">  200</span>}</div>
+<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00183">183</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  183</span>                                                             {</div>
+<div class="line"><span class="lineno">  184</span>    int16_t pulseCount = 0;</div>
+<div class="line"><span class="lineno">  185</span>    pcnt_get_counter_value(PCNT_UNIT_0, &amp;pulseCount);</div>
+<div class="line"><span class="lineno">  186</span>    <span class="keywordflow">return</span> ((<span class="keywordtype">long</span>)<a class="code hl_variable" href="classFastNonAccelStepper.html#a899dd9ea157d164e660bb15055f0a53d">_overflowCount</a> * (<span class="keywordtype">long</span>)<a class="code hl_define" href="FastNonAccelStepper_8cpp.html#a85f2db5f58e51264c23b3d3aa6260ba8">PCNT_MIN_MAX_THRESHOLD</a>) + (long)pulseCount - <a class="code hl_variable" href="classFastNonAccelStepper.html#ad47dada977c9127a6feab21cba2ad2a4">_zeroPosition_i32</a>;</div>
+<div class="line"><span class="lineno">  187</span>}</div>
 <div class="ttc" id="aFastNonAccelStepper_8cpp_html_a85f2db5f58e51264c23b3d3aa6260ba8"><div class="ttname"><a href="FastNonAccelStepper_8cpp.html#a85f2db5f58e51264c23b3d3aa6260ba8">PCNT_MIN_MAX_THRESHOLD</a></div><div class="ttdeci">#define PCNT_MIN_MAX_THRESHOLD</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00014">FastNonAccelStepper.cpp:14</a></div></div>
 </div><!-- fragment --><div class="dynheader">
 Here is the caller graph for this function:</div>
@@ -663,10 +668,10 @@ Here is the caller graph for this function:</div>
 <p>Get the motor's position after all commanded moves are completed. </p>
 <dl class="section return"><dt>Returns</dt><dd>The final position in steps. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00376">376</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
-<div class="fragment"><div class="line"><span class="lineno">  377</span>{</div>
-<div class="line"><span class="lineno">  378</span>  <span class="keywordflow">return</span> <a class="code hl_variable" href="classFastNonAccelStepper.html#adf4bd74b23420febbb5a98e3bba3b985">_targetPosition</a>;</div>
-<div class="line"><span class="lineno">  379</span>}</div>
+<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00368">368</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  369</span>{</div>
+<div class="line"><span class="lineno">  370</span>  <span class="keywordflow">return</span> <a class="code hl_variable" href="classFastNonAccelStepper.html#adf4bd74b23420febbb5a98e3bba3b985">_targetPosition</a>;</div>
+<div class="line"><span class="lineno">  371</span>}</div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -695,17 +700,17 @@ Here is the caller graph for this function:</div>
 
 <p>Initialize the MCPWM module for step signal generation. </p>
 
-<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00203">203</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
-<div class="fragment"><div class="line"><span class="lineno">  203</span>                                    {</div>
-<div class="line"><span class="lineno">  204</span>    mcpwm_config_t pwmConfig;</div>
-<div class="line"><span class="lineno">  205</span>    pwmConfig.frequency = <a class="code hl_variable" href="classFastNonAccelStepper.html#abee1cfd9cf6f90b2481d23e7a42a917f">_maxSpeed</a>;</div>
-<div class="line"><span class="lineno">  206</span>    pwmConfig.cmpr_a = <a class="code hl_define" href="FastNonAccelStepper_8cpp.html#a54db32ff6cb2260a1b41cf207b28d6a2">PWM_DUTY_CYCLE</a>;</div>
-<div class="line"><span class="lineno">  207</span>    pwmConfig.cmpr_b = 0.0;</div>
-<div class="line"><span class="lineno">  208</span>    pwmConfig.counter_mode = MCPWM_UP_COUNTER;</div>
-<div class="line"><span class="lineno">  209</span>    pwmConfig.duty_mode = MCPWM_DUTY_MODE_0;</div>
-<div class="line"><span class="lineno">  210</span> </div>
-<div class="line"><span class="lineno">  211</span>    mcpwm_init(MCPWM_UNIT_0, MCPWM_TIMER_0, &amp;pwmConfig);</div>
-<div class="line"><span class="lineno">  212</span>}</div>
+<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00190">190</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  190</span>                                    {</div>
+<div class="line"><span class="lineno">  191</span>    mcpwm_config_t pwmConfig;</div>
+<div class="line"><span class="lineno">  192</span>    pwmConfig.frequency = <a class="code hl_variable" href="classFastNonAccelStepper.html#abee1cfd9cf6f90b2481d23e7a42a917f">_maxSpeed</a>;</div>
+<div class="line"><span class="lineno">  193</span>    pwmConfig.cmpr_a = <a class="code hl_define" href="FastNonAccelStepper_8cpp.html#a54db32ff6cb2260a1b41cf207b28d6a2">PWM_DUTY_CYCLE</a>;</div>
+<div class="line"><span class="lineno">  194</span>    pwmConfig.cmpr_b = 0.0;</div>
+<div class="line"><span class="lineno">  195</span>    pwmConfig.counter_mode = MCPWM_UP_COUNTER;</div>
+<div class="line"><span class="lineno">  196</span>    pwmConfig.duty_mode = MCPWM_DUTY_MODE_0;</div>
+<div class="line"><span class="lineno">  197</span> </div>
+<div class="line"><span class="lineno">  198</span>    mcpwm_init(MCPWM_UNIT_0, MCPWM_TIMER_0, &amp;pwmConfig);</div>
+<div class="line"><span class="lineno">  199</span>}</div>
 <div class="ttc" id="aFastNonAccelStepper_8cpp_html_a54db32ff6cb2260a1b41cf207b28d6a2"><div class="ttname"><a href="FastNonAccelStepper_8cpp.html#a54db32ff6cb2260a1b41cf207b28d6a2">PWM_DUTY_CYCLE</a></div><div class="ttdeci">#define PWM_DUTY_CYCLE</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00013">FastNonAccelStepper.cpp:13</a></div></div>
 </div><!-- fragment --><div class="dynheader">
 Here is the caller graph for this function:</div>
@@ -745,38 +750,38 @@ Here is the caller graph for this function:</div>
 
 <p>Initialize the PCNT module for position control. </p>
 
-<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00246">246</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
-<div class="fragment"><div class="line"><span class="lineno">  246</span>                                          {</div>
-<div class="line"><span class="lineno">  247</span>    pcnt_config_t pcntConfig;</div>
-<div class="line"><span class="lineno">  248</span>    pcntConfig.pulse_gpio_num = <a class="code hl_variable" href="classFastNonAccelStepper.html#a44184b1e11284252832381ae32025c4b">_stepPin</a>;</div>
-<div class="line"><span class="lineno">  249</span>    pcntConfig.ctrl_gpio_num = <a class="code hl_variable" href="classFastNonAccelStepper.html#abe2c601b0b30d214f0ffa1cf2fd827b3">_dirPin</a>;</div>
-<div class="line"><span class="lineno">  250</span>    pcntConfig.channel = PCNT_CHANNEL_0;</div>
-<div class="line"><span class="lineno">  251</span>    pcntConfig.unit = PCNT_UNIT_1;</div>
-<div class="line"><span class="lineno">  252</span>    pcntConfig.pos_mode = PCNT_COUNT_INC;</div>
-<div class="line"><span class="lineno">  253</span>    pcntConfig.neg_mode = PCNT_COUNT_DIS;</div>
-<div class="line"><span class="lineno">  254</span>    pcntConfig.lctrl_mode = (pcnt_ctrl_mode_t)<a class="code hl_variable" href="classFastNonAccelStepper.html#abf77199adbac7a5591baff5ae701b429">_dir_pcnt_lctrl_mode_b</a>;</div>
-<div class="line"><span class="lineno">  255</span>    pcntConfig.hctrl_mode = (pcnt_ctrl_mode_t)<a class="code hl_variable" href="classFastNonAccelStepper.html#a0568a00afb6ea1e836bfcd29bea362d2">_dir_pcnt_hctrl_mode_b</a>;</div>
-<div class="line"><span class="lineno">  256</span>    pcntConfig.counter_h_lim = <a class="code hl_define" href="FastNonAccelStepper_8cpp.html#a85f2db5f58e51264c23b3d3aa6260ba8">PCNT_MIN_MAX_THRESHOLD</a>;</div>
-<div class="line"><span class="lineno">  257</span>    pcntConfig.counter_l_lim = -<a class="code hl_define" href="FastNonAccelStepper_8cpp.html#a85f2db5f58e51264c23b3d3aa6260ba8">PCNT_MIN_MAX_THRESHOLD</a>;</div>
-<div class="line"><span class="lineno">  258</span> </div>
-<div class="line"><span class="lineno">  259</span>    pcnt_unit_config(&amp;pcntConfig);</div>
-<div class="line"><span class="lineno">  260</span>    pcnt_set_filter_value(PCNT_UNIT_1, <a class="code hl_define" href="FastNonAccelStepper_8cpp.html#a1e968b0a9c78a42775ae44a9cb9800bd">PCNT_FILTER_VALUE</a>);</div>
-<div class="line"><span class="lineno">  261</span>    pcnt_filter_enable(PCNT_UNIT_1);</div>
-<div class="line"><span class="lineno">  262</span> </div>
-<div class="line"><span class="lineno">  263</span>    <span class="comment">// Activate pcnt</span></div>
-<div class="line"><span class="lineno">  264</span>    pcnt_counter_clear(PCNT_UNIT_1);</div>
-<div class="line"><span class="lineno">  265</span>    pcnt_counter_resume(PCNT_UNIT_1);</div>
-<div class="line"><span class="lineno">  266</span> </div>
-<div class="line"><span class="lineno">  267</span>    <span class="comment">// PCNT event</span></div>
-<div class="line"><span class="lineno">  268</span>    pcnt_event_enable(PCNT_UNIT_1, PCNT_EVT_H_LIM);</div>
-<div class="line"><span class="lineno">  269</span>    pcnt_event_enable(PCNT_UNIT_1, PCNT_EVT_L_LIM);</div>
-<div class="line"><span class="lineno">  270</span> </div>
-<div class="line"><span class="lineno">  271</span>    pcnt_isr_handler_add(PCNT_UNIT_1, <a class="code hl_function" href="classFastNonAccelStepper.html#a6a0bf0e1386b261cdb29c0491ea64341">controlPCNTISR</a>, <span class="keyword">this</span>);</div>
-<div class="line"><span class="lineno">  272</span>    pcnt_counter_clear(PCNT_UNIT_1);</div>
-<div class="line"><span class="lineno">  273</span>    pcnt_counter_resume(PCNT_UNIT_1);</div>
-<div class="line"><span class="lineno">  274</span>}</div>
+<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00233">233</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  233</span>                                          {</div>
+<div class="line"><span class="lineno">  234</span>    pcnt_config_t pcntConfig;</div>
+<div class="line"><span class="lineno">  235</span>    pcntConfig.pulse_gpio_num = <a class="code hl_variable" href="classFastNonAccelStepper.html#a44184b1e11284252832381ae32025c4b">_stepPin</a>;</div>
+<div class="line"><span class="lineno">  236</span>    pcntConfig.ctrl_gpio_num = <a class="code hl_variable" href="classFastNonAccelStepper.html#abe2c601b0b30d214f0ffa1cf2fd827b3">_dirPin</a>;</div>
+<div class="line"><span class="lineno">  237</span>    pcntConfig.channel = PCNT_CHANNEL_0;</div>
+<div class="line"><span class="lineno">  238</span>    pcntConfig.unit = PCNT_UNIT_1;</div>
+<div class="line"><span class="lineno">  239</span>    pcntConfig.pos_mode = PCNT_COUNT_INC;</div>
+<div class="line"><span class="lineno">  240</span>    pcntConfig.neg_mode = PCNT_COUNT_DIS;</div>
+<div class="line"><span class="lineno">  241</span>    pcntConfig.lctrl_mode = (pcnt_ctrl_mode_t)<a class="code hl_variable" href="classFastNonAccelStepper.html#abf77199adbac7a5591baff5ae701b429">_dir_pcnt_lctrl_mode_b</a>;</div>
+<div class="line"><span class="lineno">  242</span>    pcntConfig.hctrl_mode = (pcnt_ctrl_mode_t)<a class="code hl_variable" href="classFastNonAccelStepper.html#a0568a00afb6ea1e836bfcd29bea362d2">_dir_pcnt_hctrl_mode_b</a>;</div>
+<div class="line"><span class="lineno">  243</span>    pcntConfig.counter_h_lim = <a class="code hl_define" href="FastNonAccelStepper_8cpp.html#a85f2db5f58e51264c23b3d3aa6260ba8">PCNT_MIN_MAX_THRESHOLD</a>;</div>
+<div class="line"><span class="lineno">  244</span>    pcntConfig.counter_l_lim = -<a class="code hl_define" href="FastNonAccelStepper_8cpp.html#a85f2db5f58e51264c23b3d3aa6260ba8">PCNT_MIN_MAX_THRESHOLD</a>;</div>
+<div class="line"><span class="lineno">  245</span> </div>
+<div class="line"><span class="lineno">  246</span>    pcnt_unit_config(&amp;pcntConfig);</div>
+<div class="line"><span class="lineno">  247</span>    pcnt_set_filter_value(PCNT_UNIT_1, <a class="code hl_define" href="FastNonAccelStepper_8cpp.html#a1e968b0a9c78a42775ae44a9cb9800bd">PCNT_FILTER_VALUE</a>);</div>
+<div class="line"><span class="lineno">  248</span>    pcnt_filter_enable(PCNT_UNIT_1);</div>
+<div class="line"><span class="lineno">  249</span> </div>
+<div class="line"><span class="lineno">  250</span>    <span class="comment">// Activate pcnt</span></div>
+<div class="line"><span class="lineno">  251</span>    pcnt_counter_clear(PCNT_UNIT_1);</div>
+<div class="line"><span class="lineno">  252</span>    pcnt_counter_resume(PCNT_UNIT_1);</div>
+<div class="line"><span class="lineno">  253</span> </div>
+<div class="line"><span class="lineno">  254</span>    <span class="comment">// PCNT event</span></div>
+<div class="line"><span class="lineno">  255</span>    pcnt_event_enable(PCNT_UNIT_1, PCNT_EVT_H_LIM);</div>
+<div class="line"><span class="lineno">  256</span>    pcnt_event_enable(PCNT_UNIT_1, PCNT_EVT_L_LIM);</div>
+<div class="line"><span class="lineno">  257</span> </div>
+<div class="line"><span class="lineno">  258</span>    pcnt_isr_handler_add(PCNT_UNIT_1, <a class="code hl_function" href="classFastNonAccelStepper.html#a6a0bf0e1386b261cdb29c0491ea64341">controlPCNTISR</a>, <span class="keyword">this</span>);</div>
+<div class="line"><span class="lineno">  259</span>    pcnt_counter_clear(PCNT_UNIT_1);</div>
+<div class="line"><span class="lineno">  260</span>    pcnt_counter_resume(PCNT_UNIT_1);</div>
+<div class="line"><span class="lineno">  261</span>}</div>
 <div class="ttc" id="aFastNonAccelStepper_8cpp_html_a1e968b0a9c78a42775ae44a9cb9800bd"><div class="ttname"><a href="FastNonAccelStepper_8cpp.html#a1e968b0a9c78a42775ae44a9cb9800bd">PCNT_FILTER_VALUE</a></div><div class="ttdeci">#define PCNT_FILTER_VALUE</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00016">FastNonAccelStepper.cpp:16</a></div></div>
-<div class="ttc" id="aclassFastNonAccelStepper_html_a6a0bf0e1386b261cdb29c0491ea64341"><div class="ttname"><a href="classFastNonAccelStepper.html#a6a0bf0e1386b261cdb29c0491ea64341">FastNonAccelStepper::controlPCNTISR</a></div><div class="ttdeci">static void IRAM_ATTR controlPCNTISR(void *arg)</div><div class="ttdoc">Handle PCNT events for position control.</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00289">FastNonAccelStepper.cpp:289</a></div></div>
+<div class="ttc" id="aclassFastNonAccelStepper_html_a6a0bf0e1386b261cdb29c0491ea64341"><div class="ttname"><a href="classFastNonAccelStepper.html#a6a0bf0e1386b261cdb29c0491ea64341">FastNonAccelStepper::controlPCNTISR</a></div><div class="ttdeci">static void IRAM_ATTR controlPCNTISR(void *arg)</div><div class="ttdoc">Handle PCNT events for position control.</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00276">FastNonAccelStepper.cpp:276</a></div></div>
 </div><!-- fragment --><div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
@@ -825,39 +830,39 @@ Here is the caller graph for this function:</div>
 
 <p>Initialize the PCNT module for multiturn position tracking. </p>
 
-<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00214">214</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
-<div class="fragment"><div class="line"><span class="lineno">  214</span>                                            {</div>
-<div class="line"><span class="lineno">  215</span>    pcnt_config_t pcntConfig;</div>
-<div class="line"><span class="lineno">  216</span>    pcntConfig.pulse_gpio_num = <a class="code hl_variable" href="classFastNonAccelStepper.html#a44184b1e11284252832381ae32025c4b">_stepPin</a>;</div>
-<div class="line"><span class="lineno">  217</span>    pcntConfig.ctrl_gpio_num = <a class="code hl_variable" href="classFastNonAccelStepper.html#abe2c601b0b30d214f0ffa1cf2fd827b3">_dirPin</a>;</div>
-<div class="line"><span class="lineno">  218</span>    pcntConfig.channel = PCNT_CHANNEL_0;</div>
-<div class="line"><span class="lineno">  219</span>    pcntConfig.unit = PCNT_UNIT_0;</div>
-<div class="line"><span class="lineno">  220</span>    pcntConfig.pos_mode = PCNT_COUNT_INC;</div>
-<div class="line"><span class="lineno">  221</span>    pcntConfig.neg_mode = PCNT_COUNT_DIS;</div>
-<div class="line"><span class="lineno">  222</span>    pcntConfig.lctrl_mode = (pcnt_ctrl_mode_t)<a class="code hl_variable" href="classFastNonAccelStepper.html#abf77199adbac7a5591baff5ae701b429">_dir_pcnt_lctrl_mode_b</a>;</div>
-<div class="line"><span class="lineno">  223</span>    pcntConfig.hctrl_mode = (pcnt_ctrl_mode_t)<a class="code hl_variable" href="classFastNonAccelStepper.html#a0568a00afb6ea1e836bfcd29bea362d2">_dir_pcnt_hctrl_mode_b</a>;</div>
-<div class="line"><span class="lineno">  224</span>    pcntConfig.counter_h_lim = <a class="code hl_define" href="FastNonAccelStepper_8cpp.html#a85f2db5f58e51264c23b3d3aa6260ba8">PCNT_MIN_MAX_THRESHOLD</a>;</div>
-<div class="line"><span class="lineno">  225</span>    pcntConfig.counter_l_lim = -<a class="code hl_define" href="FastNonAccelStepper_8cpp.html#a85f2db5f58e51264c23b3d3aa6260ba8">PCNT_MIN_MAX_THRESHOLD</a>;</div>
+<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00201">201</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  201</span>                                            {</div>
+<div class="line"><span class="lineno">  202</span>    pcnt_config_t pcntConfig;</div>
+<div class="line"><span class="lineno">  203</span>    pcntConfig.pulse_gpio_num = <a class="code hl_variable" href="classFastNonAccelStepper.html#a44184b1e11284252832381ae32025c4b">_stepPin</a>;</div>
+<div class="line"><span class="lineno">  204</span>    pcntConfig.ctrl_gpio_num = <a class="code hl_variable" href="classFastNonAccelStepper.html#abe2c601b0b30d214f0ffa1cf2fd827b3">_dirPin</a>;</div>
+<div class="line"><span class="lineno">  205</span>    pcntConfig.channel = PCNT_CHANNEL_0;</div>
+<div class="line"><span class="lineno">  206</span>    pcntConfig.unit = PCNT_UNIT_0;</div>
+<div class="line"><span class="lineno">  207</span>    pcntConfig.pos_mode = PCNT_COUNT_INC;</div>
+<div class="line"><span class="lineno">  208</span>    pcntConfig.neg_mode = PCNT_COUNT_DIS;</div>
+<div class="line"><span class="lineno">  209</span>    pcntConfig.lctrl_mode = (pcnt_ctrl_mode_t)<a class="code hl_variable" href="classFastNonAccelStepper.html#abf77199adbac7a5591baff5ae701b429">_dir_pcnt_lctrl_mode_b</a>;</div>
+<div class="line"><span class="lineno">  210</span>    pcntConfig.hctrl_mode = (pcnt_ctrl_mode_t)<a class="code hl_variable" href="classFastNonAccelStepper.html#a0568a00afb6ea1e836bfcd29bea362d2">_dir_pcnt_hctrl_mode_b</a>;</div>
+<div class="line"><span class="lineno">  211</span>    pcntConfig.counter_h_lim = <a class="code hl_define" href="FastNonAccelStepper_8cpp.html#a85f2db5f58e51264c23b3d3aa6260ba8">PCNT_MIN_MAX_THRESHOLD</a>;</div>
+<div class="line"><span class="lineno">  212</span>    pcntConfig.counter_l_lim = -<a class="code hl_define" href="FastNonAccelStepper_8cpp.html#a85f2db5f58e51264c23b3d3aa6260ba8">PCNT_MIN_MAX_THRESHOLD</a>;</div>
+<div class="line"><span class="lineno">  213</span> </div>
+<div class="line"><span class="lineno">  214</span>    pcnt_unit_config(&amp;pcntConfig);</div>
+<div class="line"><span class="lineno">  215</span> </div>
+<div class="line"><span class="lineno">  216</span>    pcnt_set_filter_value(PCNT_UNIT_0, <a class="code hl_define" href="FastNonAccelStepper_8cpp.html#a1e968b0a9c78a42775ae44a9cb9800bd">PCNT_FILTER_VALUE</a>);</div>
+<div class="line"><span class="lineno">  217</span>    pcnt_filter_enable(PCNT_UNIT_0);</div>
+<div class="line"><span class="lineno">  218</span> </div>
+<div class="line"><span class="lineno">  219</span>    <span class="comment">// Activate pcnt</span></div>
+<div class="line"><span class="lineno">  220</span>    pcnt_counter_clear(PCNT_UNIT_0);</div>
+<div class="line"><span class="lineno">  221</span>    pcnt_counter_resume(PCNT_UNIT_0);</div>
+<div class="line"><span class="lineno">  222</span> </div>
+<div class="line"><span class="lineno">  223</span>    <span class="comment">// PCNT event</span></div>
+<div class="line"><span class="lineno">  224</span>    pcnt_event_enable(PCNT_UNIT_0, PCNT_EVT_H_LIM);</div>
+<div class="line"><span class="lineno">  225</span>    pcnt_event_enable(PCNT_UNIT_0, PCNT_EVT_L_LIM);</div>
 <div class="line"><span class="lineno">  226</span> </div>
-<div class="line"><span class="lineno">  227</span>    pcnt_unit_config(&amp;pcntConfig);</div>
-<div class="line"><span class="lineno">  228</span> </div>
-<div class="line"><span class="lineno">  229</span>    pcnt_set_filter_value(PCNT_UNIT_0, <a class="code hl_define" href="FastNonAccelStepper_8cpp.html#a1e968b0a9c78a42775ae44a9cb9800bd">PCNT_FILTER_VALUE</a>);</div>
-<div class="line"><span class="lineno">  230</span>    pcnt_filter_enable(PCNT_UNIT_0);</div>
-<div class="line"><span class="lineno">  231</span> </div>
-<div class="line"><span class="lineno">  232</span>    <span class="comment">// Activate pcnt</span></div>
-<div class="line"><span class="lineno">  233</span>    pcnt_counter_clear(PCNT_UNIT_0);</div>
-<div class="line"><span class="lineno">  234</span>    pcnt_counter_resume(PCNT_UNIT_0);</div>
-<div class="line"><span class="lineno">  235</span> </div>
-<div class="line"><span class="lineno">  236</span>    <span class="comment">// PCNT event</span></div>
-<div class="line"><span class="lineno">  237</span>    pcnt_event_enable(PCNT_UNIT_0, PCNT_EVT_H_LIM);</div>
-<div class="line"><span class="lineno">  238</span>    pcnt_event_enable(PCNT_UNIT_0, PCNT_EVT_L_LIM);</div>
-<div class="line"><span class="lineno">  239</span> </div>
-<div class="line"><span class="lineno">  240</span>    pcnt_isr_service_install(0);</div>
-<div class="line"><span class="lineno">  241</span>    pcnt_isr_handler_add(PCNT_UNIT_0, <a class="code hl_function" href="classFastNonAccelStepper.html#a7ef0058ae03883a90674a2c73b060137">multiturnPCNTISR</a>, <span class="keyword">this</span>);</div>
-<div class="line"><span class="lineno">  242</span>    pcnt_counter_clear(PCNT_UNIT_0);</div>
-<div class="line"><span class="lineno">  243</span>    pcnt_counter_resume(PCNT_UNIT_0);</div>
-<div class="line"><span class="lineno">  244</span>}</div>
-<div class="ttc" id="aclassFastNonAccelStepper_html_a7ef0058ae03883a90674a2c73b060137"><div class="ttname"><a href="classFastNonAccelStepper.html#a7ef0058ae03883a90674a2c73b060137">FastNonAccelStepper::multiturnPCNTISR</a></div><div class="ttdeci">static void IRAM_ATTR multiturnPCNTISR(void *arg)</div><div class="ttdoc">Handle PCNT events for multiturn tracking.</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00276">FastNonAccelStepper.cpp:276</a></div></div>
+<div class="line"><span class="lineno">  227</span>    pcnt_isr_service_install(0);</div>
+<div class="line"><span class="lineno">  228</span>    pcnt_isr_handler_add(PCNT_UNIT_0, <a class="code hl_function" href="classFastNonAccelStepper.html#a7ef0058ae03883a90674a2c73b060137">multiturnPCNTISR</a>, <span class="keyword">this</span>);</div>
+<div class="line"><span class="lineno">  229</span>    pcnt_counter_clear(PCNT_UNIT_0);</div>
+<div class="line"><span class="lineno">  230</span>    pcnt_counter_resume(PCNT_UNIT_0);</div>
+<div class="line"><span class="lineno">  231</span>}</div>
+<div class="ttc" id="aclassFastNonAccelStepper_html_a7ef0058ae03883a90674a2c73b060137"><div class="ttname"><a href="classFastNonAccelStepper.html#a7ef0058ae03883a90674a2c73b060137">FastNonAccelStepper::multiturnPCNTISR</a></div><div class="ttdeci">static void IRAM_ATTR multiturnPCNTISR(void *arg)</div><div class="ttdoc">Handle PCNT events for multiturn tracking.</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00263">FastNonAccelStepper.cpp:263</a></div></div>
 </div><!-- fragment --><div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
@@ -898,10 +903,10 @@ Here is the caller graph for this function:</div>
 <p>Check if the stepper motor is currently running. </p>
 <dl class="section return"><dt>Returns</dt><dd>True if the motor is running, false otherwise. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00330">330</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
-<div class="fragment"><div class="line"><span class="lineno">  331</span>{</div>
-<div class="line"><span class="lineno">  332</span>    <span class="keywordflow">return</span> <a class="code hl_variable" href="classFastNonAccelStepper.html#a1792aff3753f27058002b924ab8c1876">_isRunning</a>;</div>
-<div class="line"><span class="lineno">  333</span>}</div>
+<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00322">322</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  323</span>{</div>
+<div class="line"><span class="lineno">  324</span>    <span class="keywordflow">return</span> <a class="code hl_variable" href="classFastNonAccelStepper.html#a1792aff3753f27058002b924ab8c1876">_isRunning</a>;</div>
+<div class="line"><span class="lineno">  325</span>}</div>
 </div><!-- fragment --><div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -939,11 +944,11 @@ Here is the caller graph for this function:</div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00371">371</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
-<div class="fragment"><div class="line"><span class="lineno">  372</span>{</div>
-<div class="line"><span class="lineno">  373</span>    <a class="code hl_function" href="classFastNonAccelStepper.html#a7bddbcf6d2477480bbe2f0fceeb24413">keepRunningInDir</a>(<span class="keyword">false</span>, speed);</div>
-<div class="line"><span class="lineno">  374</span>}</div>
-<div class="ttc" id="aclassFastNonAccelStepper_html_a7bddbcf6d2477480bbe2f0fceeb24413"><div class="ttname"><a href="classFastNonAccelStepper.html#a7bddbcf6d2477480bbe2f0fceeb24413">FastNonAccelStepper::keepRunningInDir</a></div><div class="ttdeci">void keepRunningInDir(bool forwardDir, uint32_t speed)</div><div class="ttdoc">Keep the stepper motor running in a specified direction.</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00335">FastNonAccelStepper.cpp:335</a></div></div>
+<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00363">363</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  364</span>{</div>
+<div class="line"><span class="lineno">  365</span>    <a class="code hl_function" href="classFastNonAccelStepper.html#a7bddbcf6d2477480bbe2f0fceeb24413">keepRunningInDir</a>(<span class="keyword">false</span>, speed);</div>
+<div class="line"><span class="lineno">  366</span>}</div>
+<div class="ttc" id="aclassFastNonAccelStepper_html_a7bddbcf6d2477480bbe2f0fceeb24413"><div class="ttname"><a href="classFastNonAccelStepper.html#a7bddbcf6d2477480bbe2f0fceeb24413">FastNonAccelStepper::keepRunningInDir</a></div><div class="ttdeci">void keepRunningInDir(bool forwardDir, uint32_t speed)</div><div class="ttdoc">Keep the stepper motor running in a specified direction.</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00327">FastNonAccelStepper.cpp:327</a></div></div>
 </div><!-- fragment --><div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
@@ -982,10 +987,10 @@ Here is the call graph for this function:</div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00366">366</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
-<div class="fragment"><div class="line"><span class="lineno">  367</span>{</div>
-<div class="line"><span class="lineno">  368</span>    <a class="code hl_function" href="classFastNonAccelStepper.html#a7bddbcf6d2477480bbe2f0fceeb24413">keepRunningInDir</a>(<span class="keyword">true</span>, speed);</div>
-<div class="line"><span class="lineno">  369</span>}</div>
+<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00358">358</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  359</span>{</div>
+<div class="line"><span class="lineno">  360</span>    <a class="code hl_function" href="classFastNonAccelStepper.html#a7bddbcf6d2477480bbe2f0fceeb24413">keepRunningInDir</a>(<span class="keyword">true</span>, speed);</div>
+<div class="line"><span class="lineno">  361</span>}</div>
 </div><!-- fragment --><div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
@@ -1035,36 +1040,36 @@ Here is the call graph for this function:</div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00335">335</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
-<div class="fragment"><div class="line"><span class="lineno">  336</span>{</div>
-<div class="line"><span class="lineno">  337</span>    <a class="code hl_function" href="classFastNonAccelStepper.html#abd6a0e3d93e72abd9648ee83ff6033bb">forceStop</a>();</div>
-<div class="line"><span class="lineno">  338</span>    </div>
-<div class="line"><span class="lineno">  339</span>    <span class="keywordflow">if</span> (forwardDir)</div>
-<div class="line"><span class="lineno">  340</span>    {</div>
-<div class="line"><span class="lineno">  341</span>        digitalWrite(<a class="code hl_variable" href="classFastNonAccelStepper.html#abe2c601b0b30d214f0ffa1cf2fd827b3">_dirPin</a>, <a class="code hl_variable" href="classFastNonAccelStepper.html#a194a8999a065669cf6dcca4841de258b">_dir_level_forward_b</a>);</div>
-<div class="line"><span class="lineno">  342</span>    }</div>
-<div class="line"><span class="lineno">  343</span>    <span class="keywordflow">else</span></div>
-<div class="line"><span class="lineno">  344</span>    {</div>
-<div class="line"><span class="lineno">  345</span>        digitalWrite(<a class="code hl_variable" href="classFastNonAccelStepper.html#abe2c601b0b30d214f0ffa1cf2fd827b3">_dirPin</a>, <a class="code hl_variable" href="classFastNonAccelStepper.html#a1dbab92a6ee6664f0bd924f182e000cc">_dir_level_backward_b</a>);</div>
-<div class="line"><span class="lineno">  346</span>    }</div>
-<div class="line"><span class="lineno">  347</span> </div>
-<div class="line"><span class="lineno">  348</span>    pcnt_counter_pause(PCNT_UNIT_1);</div>
-<div class="line"><span class="lineno">  349</span>    pcnt_counter_clear(PCNT_UNIT_1);</div>
-<div class="line"><span class="lineno">  350</span> </div>
-<div class="line"><span class="lineno">  351</span>    pcnt_event_disable(PCNT_UNIT_1, PCNT_EVT_H_LIM);</div>
-<div class="line"><span class="lineno">  352</span>    pcnt_event_disable(PCNT_UNIT_1, PCNT_EVT_L_LIM);</div>
-<div class="line"><span class="lineno">  353</span> </div>
-<div class="line"><span class="lineno">  354</span>    pcnt_counter_clear(PCNT_UNIT_1);</div>
-<div class="line"><span class="lineno">  355</span>    pcnt_counter_resume(PCNT_UNIT_1);</div>
-<div class="line"><span class="lineno">  356</span> </div>
-<div class="line"><span class="lineno">  357</span>    <a class="code hl_function" href="classFastNonAccelStepper.html#ab1c78c8d709b7345e1b2c87eaf0ebb08">setMaxSpeed</a>(speed); </div>
-<div class="line"><span class="lineno">  358</span>    </div>
-<div class="line"><span class="lineno">  359</span>    </div>
-<div class="line"><span class="lineno">  360</span> </div>
-<div class="line"><span class="lineno">  361</span>    delayMicroseconds(5);   </div>
-<div class="line"><span class="lineno">  362</span>    <a class="code hl_variable" href="classFastNonAccelStepper.html#a1792aff3753f27058002b924ab8c1876">_isRunning</a> = <span class="keyword">true</span>;</div>
-<div class="line"><span class="lineno">  363</span>    mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);</div>
-<div class="line"><span class="lineno">  364</span>}</div>
+<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00327">327</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  328</span>{</div>
+<div class="line"><span class="lineno">  329</span>    <a class="code hl_function" href="classFastNonAccelStepper.html#abd6a0e3d93e72abd9648ee83ff6033bb">forceStop</a>();</div>
+<div class="line"><span class="lineno">  330</span>    </div>
+<div class="line"><span class="lineno">  331</span>    <span class="keywordflow">if</span> (forwardDir)</div>
+<div class="line"><span class="lineno">  332</span>    {</div>
+<div class="line"><span class="lineno">  333</span>        digitalWrite(<a class="code hl_variable" href="classFastNonAccelStepper.html#abe2c601b0b30d214f0ffa1cf2fd827b3">_dirPin</a>, <a class="code hl_variable" href="classFastNonAccelStepper.html#a194a8999a065669cf6dcca4841de258b">_dir_level_forward_b</a>);</div>
+<div class="line"><span class="lineno">  334</span>    }</div>
+<div class="line"><span class="lineno">  335</span>    <span class="keywordflow">else</span></div>
+<div class="line"><span class="lineno">  336</span>    {</div>
+<div class="line"><span class="lineno">  337</span>        digitalWrite(<a class="code hl_variable" href="classFastNonAccelStepper.html#abe2c601b0b30d214f0ffa1cf2fd827b3">_dirPin</a>, <a class="code hl_variable" href="classFastNonAccelStepper.html#a1dbab92a6ee6664f0bd924f182e000cc">_dir_level_backward_b</a>);</div>
+<div class="line"><span class="lineno">  338</span>    }</div>
+<div class="line"><span class="lineno">  339</span> </div>
+<div class="line"><span class="lineno">  340</span>    pcnt_counter_pause(PCNT_UNIT_1);</div>
+<div class="line"><span class="lineno">  341</span>    pcnt_counter_clear(PCNT_UNIT_1);</div>
+<div class="line"><span class="lineno">  342</span> </div>
+<div class="line"><span class="lineno">  343</span>    pcnt_event_disable(PCNT_UNIT_1, PCNT_EVT_H_LIM);</div>
+<div class="line"><span class="lineno">  344</span>    pcnt_event_disable(PCNT_UNIT_1, PCNT_EVT_L_LIM);</div>
+<div class="line"><span class="lineno">  345</span> </div>
+<div class="line"><span class="lineno">  346</span>    pcnt_counter_clear(PCNT_UNIT_1);</div>
+<div class="line"><span class="lineno">  347</span>    pcnt_counter_resume(PCNT_UNIT_1);</div>
+<div class="line"><span class="lineno">  348</span> </div>
+<div class="line"><span class="lineno">  349</span>    <a class="code hl_function" href="classFastNonAccelStepper.html#ab1c78c8d709b7345e1b2c87eaf0ebb08">setMaxSpeed</a>(speed); </div>
+<div class="line"><span class="lineno">  350</span>    </div>
+<div class="line"><span class="lineno">  351</span>    </div>
+<div class="line"><span class="lineno">  352</span> </div>
+<div class="line"><span class="lineno">  353</span>    delayMicroseconds(5);   </div>
+<div class="line"><span class="lineno">  354</span>    <a class="code hl_variable" href="classFastNonAccelStepper.html#a1792aff3753f27058002b924ab8c1876">_isRunning</a> = <span class="keyword">true</span>;</div>
+<div class="line"><span class="lineno">  355</span>    mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);</div>
+<div class="line"><span class="lineno">  356</span>}</div>
 <div class="ttc" id="aclassFastNonAccelStepper_html_ab1c78c8d709b7345e1b2c87eaf0ebb08"><div class="ttname"><a href="classFastNonAccelStepper.html#ab1c78c8d709b7345e1b2c87eaf0ebb08">FastNonAccelStepper::setMaxSpeed</a></div><div class="ttdeci">void setMaxSpeed(uint32_t speed)</div><div class="ttdoc">Set the maximum speed of the stepper motor.</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00076">FastNonAccelStepper.cpp:76</a></div></div>
 </div><!-- fragment --><div class="dynheader">
 Here is the call graph for this function:</div>
@@ -1134,90 +1139,77 @@ Here is the caller graph for this function:</div>
 <div class="line"><span class="lineno">  101</span> </div>
 <div class="line"><span class="lineno">  102</span>    <span class="keywordflow">if</span> (absStepsToMove &gt; <a class="code hl_define" href="FastNonAccelStepper_8cpp.html#a86b029649a12b824e4e54eb083f12960">POSITION_TRIGGER_THRESHOLD</a>) {</div>
 <div class="line"><span class="lineno">  103</span> </div>
-<div class="line"><span class="lineno">  104</span>      <span class="comment">// calculate number of required pcnt wraps</span></div>
-<div class="line"><span class="lineno">  105</span>      <span class="keywordtype">long</span> numbWraps = 0; <span class="comment">//absStepsToMove / PCNT_MIN_MAX_THRESHOLD;</span></div>
+<div class="line"><span class="lineno">  104</span>      <span class="comment">// MATLAB code:</span></div>
+<div class="line"><span class="lineno">  105</span>      <span class="comment">// PCNT_MIN_MAX_THRESHOLD = 32767; absStepsToMove = 2*PCNT_MIN_MAX_THRESHOLD; nmbWraps = idivide( int32(absStepsToMove) , int32(PCNT_MIN_MAX_THRESHOLD) ); limit = absStepsToMove / (nmbWraps+1)</span></div>
 <div class="line"><span class="lineno">  106</span> </div>
-<div class="line"><span class="lineno">  107</span>      <span class="keywordtype">long</span> absStepsToMove_helper = absStepsToMove;</div>
-<div class="line"><span class="lineno">  108</span>      <span class="keywordflow">for</span> (uint8_t idx = 0; idx &lt; 100; idx++)</div>
-<div class="line"><span class="lineno">  109</span>      {</div>
-<div class="line"><span class="lineno">  110</span>        <span class="keywordflow">if</span> (absStepsToMove_helper &gt; <a class="code hl_define" href="FastNonAccelStepper_8cpp.html#a85f2db5f58e51264c23b3d3aa6260ba8">PCNT_MIN_MAX_THRESHOLD</a>)</div>
-<div class="line"><span class="lineno">  111</span>        {</div>
-<div class="line"><span class="lineno">  112</span>          absStepsToMove_helper -= <a class="code hl_define" href="FastNonAccelStepper_8cpp.html#a85f2db5f58e51264c23b3d3aa6260ba8">PCNT_MIN_MAX_THRESHOLD</a>;</div>
-<div class="line"><span class="lineno">  113</span>          numbWraps++;</div>
-<div class="line"><span class="lineno">  114</span>        }</div>
-<div class="line"><span class="lineno">  115</span>        <span class="keywordflow">else</span></div>
-<div class="line"><span class="lineno">  116</span>        {</div>
-<div class="line"><span class="lineno">  117</span>          <span class="keywordflow">break</span>;</div>
-<div class="line"><span class="lineno">  118</span>        }</div>
-<div class="line"><span class="lineno">  119</span>      }</div>
-<div class="line"><span class="lineno">  120</span> </div>
-<div class="line"><span class="lineno">  121</span>      <span class="keywordtype">long</span> limit;</div>
-<div class="line"><span class="lineno">  122</span>      <span class="keywordflow">if</span> (numbWraps &gt; 0)</div>
-<div class="line"><span class="lineno">  123</span>      {</div>
-<div class="line"><span class="lineno">  124</span>        limit = absStepsToMove / numbWraps;</div>
-<div class="line"><span class="lineno">  125</span>      }</div>
-<div class="line"><span class="lineno">  126</span>      <span class="keywordflow">else</span></div>
-<div class="line"><span class="lineno">  127</span>      {</div>
-<div class="line"><span class="lineno">  128</span>        limit = absStepsToMove;</div>
-<div class="line"><span class="lineno">  129</span>      }</div>
-<div class="line"><span class="lineno">  130</span> </div>
-<div class="line"><span class="lineno">  131</span>      int16_t limit_i16 = constrain(limit, 0, <a class="code hl_define" href="FastNonAccelStepper_8cpp.html#a85f2db5f58e51264c23b3d3aa6260ba8">PCNT_MIN_MAX_THRESHOLD</a>);</div>
-<div class="line"><span class="lineno">  132</span> </div>
-<div class="line"><span class="lineno">  133</span>      </div>
-<div class="line"><span class="lineno">  134</span> </div>
-<div class="line"><span class="lineno">  135</span>      int16_t highLimit;</div>
-<div class="line"><span class="lineno">  136</span>      int16_t lowLimit;</div>
-<div class="line"><span class="lineno">  137</span>      <span class="comment">// 1) set DIR pin</span></div>
-<div class="line"><span class="lineno">  138</span>      <span class="comment">// 2) define upper limit for control pcnt</span></div>
-<div class="line"><span class="lineno">  139</span>      <span class="comment">// 3) define lower limit for control pcnt</span></div>
-<div class="line"><span class="lineno">  140</span>      <span class="keywordflow">if</span> (stepsToMove &gt; 0) {</div>
-<div class="line"><span class="lineno">  141</span>          digitalWrite(<a class="code hl_variable" href="classFastNonAccelStepper.html#abe2c601b0b30d214f0ffa1cf2fd827b3">_dirPin</a>, <a class="code hl_variable" href="classFastNonAccelStepper.html#a194a8999a065669cf6dcca4841de258b">_dir_level_forward_b</a>);</div>
-<div class="line"><span class="lineno">  142</span>          highLimit = limit_i16;<span class="comment">//absPositionChange - 1;</span></div>
-<div class="line"><span class="lineno">  143</span>          lowLimit = -<a class="code hl_define" href="FastNonAccelStepper_8cpp.html#a5b3df6c492b90b425304215f842c45a2">MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP</a>;</div>
-<div class="line"><span class="lineno">  144</span>          <a class="code hl_variable" href="classFastNonAccelStepper.html#ae0b3a6d038fe9acb028513c9a321b7b7">_overflowCountControl</a> = numbWraps;</div>
-<div class="line"><span class="lineno">  145</span>      } <span class="keywordflow">else</span> {</div>
-<div class="line"><span class="lineno">  146</span>          digitalWrite(<a class="code hl_variable" href="classFastNonAccelStepper.html#abe2c601b0b30d214f0ffa1cf2fd827b3">_dirPin</a>, <a class="code hl_variable" href="classFastNonAccelStepper.html#a1dbab92a6ee6664f0bd924f182e000cc">_dir_level_backward_b</a>);</div>
-<div class="line"><span class="lineno">  147</span>          highLimit = <a class="code hl_define" href="FastNonAccelStepper_8cpp.html#a5b3df6c492b90b425304215f842c45a2">MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP</a>;</div>
-<div class="line"><span class="lineno">  148</span>          lowLimit = -limit_i16;<span class="comment">//-(absPositionChange - 1);</span></div>
-<div class="line"><span class="lineno">  149</span>          <a class="code hl_variable" href="classFastNonAccelStepper.html#ae0b3a6d038fe9acb028513c9a321b7b7">_overflowCountControl</a> = numbWraps;</div>
-<div class="line"><span class="lineno">  150</span>      }</div>
-<div class="line"><span class="lineno">  151</span> </div>
-<div class="line"><span class="lineno">  152</span>      <span class="comment">// parameterize control pcnt</span></div>
-<div class="line"><span class="lineno">  153</span>      pcnt_counter_pause(PCNT_UNIT_1);</div>
-<div class="line"><span class="lineno">  154</span>      pcnt_counter_clear(PCNT_UNIT_1);</div>
-<div class="line"><span class="lineno">  155</span>      pcnt_set_event_value(PCNT_UNIT_1, PCNT_EVT_H_LIM, highLimit);</div>
-<div class="line"><span class="lineno">  156</span>      pcnt_set_event_value(PCNT_UNIT_1, PCNT_EVT_L_LIM, lowLimit);</div>
-<div class="line"><span class="lineno">  157</span>      pcnt_event_enable(PCNT_UNIT_1, PCNT_EVT_H_LIM); </div>
-<div class="line"><span class="lineno">  158</span>      pcnt_event_enable(PCNT_UNIT_1, PCNT_EVT_L_LIM);</div>
-<div class="line"><span class="lineno">  159</span>      pcnt_counter_clear(PCNT_UNIT_1);</div>
-<div class="line"><span class="lineno">  160</span>      pcnt_counter_resume(PCNT_UNIT_1);</div>
+<div class="line"><span class="lineno">  107</span>        </div>
+<div class="line"><span class="lineno">  108</span>      <span class="comment">// compute the number of wraps</span></div>
+<div class="line"><span class="lineno">  109</span>      <span class="keywordtype">long</span> numbWraps = absStepsToMove / <a class="code hl_define" href="FastNonAccelStepper_8cpp.html#a85f2db5f58e51264c23b3d3aa6260ba8">PCNT_MIN_MAX_THRESHOLD</a>;</div>
+<div class="line"><span class="lineno">  110</span> </div>
+<div class="line"><span class="lineno">  111</span>      <span class="comment">// divide into equally spaced bursts, e.g. when </span></div>
+<div class="line"><span class="lineno">  112</span>      <span class="comment">// if absStepsToMove is &lt; PCNT_MIN_MAX_THRESHOLD --&gt; numbWraps = 0 and limit_i16 = absStepsToMove</span></div>
+<div class="line"><span class="lineno">  113</span>      <span class="comment">// if absStepsToMove == PCNT_MIN_MAX_THRESHOLD --&gt; numbWraps = 1 and limit_i16 = absStepsToMove/2</span></div>
+<div class="line"><span class="lineno">  114</span>      <span class="comment">// if absStepsToMove == 2*PCNT_MIN_MAX_THRESHOLD --&gt; numbWraps = 2 and limit_i16 = absStepsToMove/3</span></div>
+<div class="line"><span class="lineno">  115</span>      <span class="comment">// if absStepsToMove &gt; PCNT_MIN_MAX_THRESHOLD --&gt; numbWraps &gt;= 1</span></div>
+<div class="line"><span class="lineno">  116</span>      <span class="keywordtype">long</span> limit;</div>
+<div class="line"><span class="lineno">  117</span>      limit = absStepsToMove / (numbWraps + 1);</div>
+<div class="line"><span class="lineno">  118</span>      int16_t limit_i16 = constrain(limit, 0, <a class="code hl_define" href="FastNonAccelStepper_8cpp.html#a85f2db5f58e51264c23b3d3aa6260ba8">PCNT_MIN_MAX_THRESHOLD</a>);</div>
+<div class="line"><span class="lineno">  119</span> </div>
+<div class="line"><span class="lineno">  120</span>      <span class="comment">// the highLimit | lowLimit will be hit numbWraps, before stopping the PWM output</span></div>
+<div class="line"><span class="lineno">  121</span> </div>
+<div class="line"><span class="lineno">  122</span>      int16_t highLimit;</div>
+<div class="line"><span class="lineno">  123</span>      int16_t lowLimit;</div>
+<div class="line"><span class="lineno">  124</span>      <span class="comment">// 1) set DIR pin</span></div>
+<div class="line"><span class="lineno">  125</span>      <span class="comment">// 2) define upper limit for control pcnt</span></div>
+<div class="line"><span class="lineno">  126</span>      <span class="comment">// 3) define lower limit for control pcnt</span></div>
+<div class="line"><span class="lineno">  127</span>      <span class="keywordflow">if</span> (stepsToMove &gt; 0) {</div>
+<div class="line"><span class="lineno">  128</span>          digitalWrite(<a class="code hl_variable" href="classFastNonAccelStepper.html#abe2c601b0b30d214f0ffa1cf2fd827b3">_dirPin</a>, <a class="code hl_variable" href="classFastNonAccelStepper.html#a194a8999a065669cf6dcca4841de258b">_dir_level_forward_b</a>);</div>
+<div class="line"><span class="lineno">  129</span>          highLimit = limit_i16;<span class="comment">//absPositionChange - 1;</span></div>
+<div class="line"><span class="lineno">  130</span>          lowLimit = -<a class="code hl_define" href="FastNonAccelStepper_8cpp.html#a5b3df6c492b90b425304215f842c45a2">MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP</a>;</div>
+<div class="line"><span class="lineno">  131</span>          <a class="code hl_variable" href="classFastNonAccelStepper.html#ae0b3a6d038fe9acb028513c9a321b7b7">_overflowCountControl</a> = numbWraps;</div>
+<div class="line"><span class="lineno">  132</span>      } <span class="keywordflow">else</span> {</div>
+<div class="line"><span class="lineno">  133</span>          digitalWrite(<a class="code hl_variable" href="classFastNonAccelStepper.html#abe2c601b0b30d214f0ffa1cf2fd827b3">_dirPin</a>, <a class="code hl_variable" href="classFastNonAccelStepper.html#a1dbab92a6ee6664f0bd924f182e000cc">_dir_level_backward_b</a>);</div>
+<div class="line"><span class="lineno">  134</span>          highLimit = <a class="code hl_define" href="FastNonAccelStepper_8cpp.html#a5b3df6c492b90b425304215f842c45a2">MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP</a>;</div>
+<div class="line"><span class="lineno">  135</span>          lowLimit = -limit_i16;<span class="comment">//-(absPositionChange - 1);</span></div>
+<div class="line"><span class="lineno">  136</span>          <a class="code hl_variable" href="classFastNonAccelStepper.html#ae0b3a6d038fe9acb028513c9a321b7b7">_overflowCountControl</a> = numbWraps;</div>
+<div class="line"><span class="lineno">  137</span>      }</div>
+<div class="line"><span class="lineno">  138</span> </div>
+<div class="line"><span class="lineno">  139</span>      <span class="comment">// parameterize control pcnt</span></div>
+<div class="line"><span class="lineno">  140</span>      pcnt_counter_pause(PCNT_UNIT_1);</div>
+<div class="line"><span class="lineno">  141</span>      pcnt_counter_clear(PCNT_UNIT_1);</div>
+<div class="line"><span class="lineno">  142</span>      pcnt_set_event_value(PCNT_UNIT_1, PCNT_EVT_H_LIM, highLimit);</div>
+<div class="line"><span class="lineno">  143</span>      pcnt_set_event_value(PCNT_UNIT_1, PCNT_EVT_L_LIM, lowLimit);</div>
+<div class="line"><span class="lineno">  144</span>      pcnt_event_enable(PCNT_UNIT_1, PCNT_EVT_H_LIM); </div>
+<div class="line"><span class="lineno">  145</span>      pcnt_event_enable(PCNT_UNIT_1, PCNT_EVT_L_LIM);</div>
+<div class="line"><span class="lineno">  146</span>      pcnt_counter_clear(PCNT_UNIT_1);</div>
+<div class="line"><span class="lineno">  147</span>      pcnt_counter_resume(PCNT_UNIT_1);</div>
+<div class="line"><span class="lineno">  148</span> </div>
+<div class="line"><span class="lineno">  149</span>      <span class="comment">//Serial.printf(&quot;Hlim: %d,    LLim: %d,    wraps: %d\n&quot;, highLimit, lowLimit, numbWraps);</span></div>
+<div class="line"><span class="lineno">  150</span> </div>
+<div class="line"><span class="lineno">  151</span>      <span class="comment">// start mcpwm</span></div>
+<div class="line"><span class="lineno">  152</span>      delayMicroseconds(5);</div>
+<div class="line"><span class="lineno">  153</span>      <a class="code hl_variable" href="classFastNonAccelStepper.html#a1792aff3753f27058002b924ab8c1876">_isRunning</a> = <span class="keyword">true</span>;</div>
+<div class="line"><span class="lineno">  154</span>      mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);</div>
+<div class="line"><span class="lineno">  155</span> </div>
+<div class="line"><span class="lineno">  156</span>      <span class="keywordflow">if</span> (blocking)</div>
+<div class="line"><span class="lineno">  157</span>      {</div>
+<div class="line"><span class="lineno">  158</span>        <span class="keywordflow">while</span>(<a class="code hl_function" href="classFastNonAccelStepper.html#a0c2278f92792431011674e2798e74675">isRunning</a>())</div>
+<div class="line"><span class="lineno">  159</span>        {</div>
+<div class="line"><span class="lineno">  160</span>          delay(1);</div>
 <div class="line"><span class="lineno">  161</span> </div>
-<div class="line"><span class="lineno">  162</span>      <span class="comment">//Serial.printf(&quot;Hlim: %d,    LLim: %d,    wraps: %d\n&quot;, highLimit, lowLimit, numbWraps);</span></div>
-<div class="line"><span class="lineno">  163</span> </div>
-<div class="line"><span class="lineno">  164</span>      <span class="comment">// start mcpwm</span></div>
-<div class="line"><span class="lineno">  165</span>      delayMicroseconds(5);</div>
-<div class="line"><span class="lineno">  166</span>      <a class="code hl_variable" href="classFastNonAccelStepper.html#a1792aff3753f27058002b924ab8c1876">_isRunning</a> = <span class="keyword">true</span>;</div>
-<div class="line"><span class="lineno">  167</span>      mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);</div>
-<div class="line"><span class="lineno">  168</span> </div>
-<div class="line"><span class="lineno">  169</span>      <span class="keywordflow">if</span> (blocking)</div>
-<div class="line"><span class="lineno">  170</span>      {</div>
-<div class="line"><span class="lineno">  171</span>        <span class="keywordflow">while</span>(<a class="code hl_function" href="classFastNonAccelStepper.html#a0c2278f92792431011674e2798e74675">isRunning</a>())</div>
-<div class="line"><span class="lineno">  172</span>        {</div>
-<div class="line"><span class="lineno">  173</span>          delay(1);</div>
-<div class="line"><span class="lineno">  174</span> </div>
-<div class="line"><span class="lineno">  175</span>          <span class="comment">/*int16_t pulseCountlcl = 0;</span></div>
-<div class="line"><span class="lineno">  176</span><span class="comment">          pcnt_get_counter_value(PCNT_UNIT_1, &amp;pulseCountlcl);</span></div>
-<div class="line"><span class="lineno">  177</span><span class="comment">          Serial.printf( &quot;CurPos: %d,    CtrlPos:%d,    overfl: %d\n&quot;, getCurrentPosition(), pulseCountlcl, _overflowCountControl);</span></div>
-<div class="line"><span class="lineno">  178</span><span class="comment">          delay(30);*/</span></div>
-<div class="line"><span class="lineno">  179</span>        }</div>
-<div class="line"><span class="lineno">  180</span>      }</div>
-<div class="line"><span class="lineno">  181</span>      </div>
-<div class="line"><span class="lineno">  182</span> </div>
-<div class="line"><span class="lineno">  183</span>    }</div>
-<div class="line"><span class="lineno">  184</span>}</div>
+<div class="line"><span class="lineno">  162</span>          <span class="comment">/*int16_t pulseCountlcl = 0;</span></div>
+<div class="line"><span class="lineno">  163</span><span class="comment">          pcnt_get_counter_value(PCNT_UNIT_1, &amp;pulseCountlcl);</span></div>
+<div class="line"><span class="lineno">  164</span><span class="comment">          Serial.printf( &quot;CurPos: %d,    CtrlPos:%d,    overfl: %d\n&quot;, getCurrentPosition(), pulseCountlcl, _overflowCountControl);</span></div>
+<div class="line"><span class="lineno">  165</span><span class="comment">          delay(30);*/</span></div>
+<div class="line"><span class="lineno">  166</span>        }</div>
+<div class="line"><span class="lineno">  167</span>      }</div>
+<div class="line"><span class="lineno">  168</span>      </div>
+<div class="line"><span class="lineno">  169</span> </div>
+<div class="line"><span class="lineno">  170</span>    }</div>
+<div class="line"><span class="lineno">  171</span>}</div>
 <div class="ttc" id="aFastNonAccelStepper_8cpp_html_a5b3df6c492b90b425304215f842c45a2"><div class="ttname"><a href="FastNonAccelStepper_8cpp.html#a5b3df6c492b90b425304215f842c45a2">MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP</a></div><div class="ttdeci">#define MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00017">FastNonAccelStepper.cpp:17</a></div></div>
 <div class="ttc" id="aFastNonAccelStepper_8cpp_html_a86b029649a12b824e4e54eb083f12960"><div class="ttname"><a href="FastNonAccelStepper_8cpp.html#a86b029649a12b824e4e54eb083f12960">POSITION_TRIGGER_THRESHOLD</a></div><div class="ttdeci">#define POSITION_TRIGGER_THRESHOLD</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00015">FastNonAccelStepper.cpp:15</a></div></div>
-<div class="ttc" id="aclassFastNonAccelStepper_html_a0c2278f92792431011674e2798e74675"><div class="ttname"><a href="classFastNonAccelStepper.html#a0c2278f92792431011674e2798e74675">FastNonAccelStepper::isRunning</a></div><div class="ttdeci">bool isRunning()</div><div class="ttdoc">Check if the stepper motor is currently running.</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00330">FastNonAccelStepper.cpp:330</a></div></div>
+<div class="ttc" id="aclassFastNonAccelStepper_html_a0c2278f92792431011674e2798e74675"><div class="ttname"><a href="classFastNonAccelStepper.html#a0c2278f92792431011674e2798e74675">FastNonAccelStepper::isRunning</a></div><div class="ttdeci">bool isRunning()</div><div class="ttdoc">Check if the stepper motor is currently running.</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00322">FastNonAccelStepper.cpp:322</a></div></div>
 </div><!-- fragment --><div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
@@ -1275,17 +1267,17 @@ Here is the caller graph for this function:</div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00187">187</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
-<div class="fragment"><div class="line"><span class="lineno">  187</span>                                                                        {</div>
-<div class="line"><span class="lineno">  188</span>    <span class="keywordtype">long</span> currentPos = <a class="code hl_function" href="classFastNonAccelStepper.html#a71264bb7f3544af84ca3a757266fcc70">getCurrentPosition</a>();</div>
-<div class="line"><span class="lineno">  189</span>    <span class="comment">//long positionChange = constrain(targetPos - currentPos, -MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE, MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE);</span></div>
-<div class="line"><span class="lineno">  190</span>    <span class="keywordtype">long</span> positionChange = targetPos - currentPos;</div>
-<div class="line"><span class="lineno">  191</span>    <a class="code hl_variable" href="classFastNonAccelStepper.html#adf4bd74b23420febbb5a98e3bba3b985">_targetPosition</a> = targetPos;</div>
-<div class="line"><span class="lineno">  192</span>    <span class="comment">//_targetPosition = currentPos + positionChange;</span></div>
-<div class="line"><span class="lineno">  193</span>    <a class="code hl_function" href="classFastNonAccelStepper.html#a147b71cdebfb914a3ba0a03c79ff57da">move</a>(positionChange, blocking);</div>
-<div class="line"><span class="lineno">  194</span>} </div>
+<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00174">174</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  174</span>                                                                        {</div>
+<div class="line"><span class="lineno">  175</span>    <span class="keywordtype">long</span> currentPos = <a class="code hl_function" href="classFastNonAccelStepper.html#a71264bb7f3544af84ca3a757266fcc70">getCurrentPosition</a>();</div>
+<div class="line"><span class="lineno">  176</span>    <span class="comment">//long positionChange = constrain(targetPos - currentPos, -MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE, MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE);</span></div>
+<div class="line"><span class="lineno">  177</span>    <span class="keywordtype">long</span> positionChange = targetPos - currentPos;</div>
+<div class="line"><span class="lineno">  178</span>    <a class="code hl_variable" href="classFastNonAccelStepper.html#adf4bd74b23420febbb5a98e3bba3b985">_targetPosition</a> = targetPos;</div>
+<div class="line"><span class="lineno">  179</span>    <span class="comment">//_targetPosition = currentPos + positionChange;</span></div>
+<div class="line"><span class="lineno">  180</span>    <a class="code hl_function" href="classFastNonAccelStepper.html#a147b71cdebfb914a3ba0a03c79ff57da">move</a>(positionChange, blocking);</div>
+<div class="line"><span class="lineno">  181</span>} </div>
 <div class="ttc" id="aclassFastNonAccelStepper_html_a147b71cdebfb914a3ba0a03c79ff57da"><div class="ttname"><a href="classFastNonAccelStepper.html#a147b71cdebfb914a3ba0a03c79ff57da">FastNonAccelStepper::move</a></div><div class="ttdeci">void move(long stepsToMove, bool blocking)</div><div class="ttdoc">Move the stepper motor by a specified number of steps.</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00095">FastNonAccelStepper.cpp:95</a></div></div>
-<div class="ttc" id="aclassFastNonAccelStepper_html_a71264bb7f3544af84ca3a757266fcc70"><div class="ttname"><a href="classFastNonAccelStepper.html#a71264bb7f3544af84ca3a757266fcc70">FastNonAccelStepper::getCurrentPosition</a></div><div class="ttdeci">long getCurrentPosition() const</div><div class="ttdoc">Read the current position of the stepper motor.</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00196">FastNonAccelStepper.cpp:196</a></div></div>
+<div class="ttc" id="aclassFastNonAccelStepper_html_a71264bb7f3544af84ca3a757266fcc70"><div class="ttname"><a href="classFastNonAccelStepper.html#a71264bb7f3544af84ca3a757266fcc70">FastNonAccelStepper::getCurrentPosition</a></div><div class="ttdeci">long getCurrentPosition() const</div><div class="ttdoc">Read the current position of the stepper motor.</div><div class="ttdef"><b>Definition:</b> <a href="FastNonAccelStepper_8cpp_source.html#l00183">FastNonAccelStepper.cpp:183</a></div></div>
 </div><!-- fragment --><div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
@@ -1333,19 +1325,19 @@ Here is the call graph for this function:</div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00276">276</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
-<div class="fragment"><div class="line"><span class="lineno">  276</span>                                                              {</div>
-<div class="line"><span class="lineno">  277</span>    <a class="code hl_class" href="classFastNonAccelStepper.html">FastNonAccelStepper</a>* instance = <span class="keyword">static_cast&lt;</span><a class="code hl_class" href="classFastNonAccelStepper.html">FastNonAccelStepper</a>*<span class="keyword">&gt;</span>(arg);</div>
-<div class="line"><span class="lineno">  278</span>    uint32_t status;</div>
-<div class="line"><span class="lineno">  279</span>    pcnt_get_event_status(PCNT_UNIT_0, &amp;status);</div>
-<div class="line"><span class="lineno">  280</span> </div>
-<div class="line"><span class="lineno">  281</span>    <span class="keywordflow">if</span> (status &amp; PCNT_EVT_H_LIM) {</div>
-<div class="line"><span class="lineno">  282</span>        instance-&gt;<a class="code hl_variable" href="classFastNonAccelStepper.html#a899dd9ea157d164e660bb15055f0a53d">_overflowCount</a>++;</div>
-<div class="line"><span class="lineno">  283</span>    }</div>
-<div class="line"><span class="lineno">  284</span>    <span class="keywordflow">if</span> (status &amp; PCNT_EVT_L_LIM) {</div>
-<div class="line"><span class="lineno">  285</span>        instance-&gt;<a class="code hl_variable" href="classFastNonAccelStepper.html#a899dd9ea157d164e660bb15055f0a53d">_overflowCount</a>--;</div>
-<div class="line"><span class="lineno">  286</span>    }</div>
-<div class="line"><span class="lineno">  287</span>}</div>
+<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00263">263</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  263</span>                                                              {</div>
+<div class="line"><span class="lineno">  264</span>    <a class="code hl_class" href="classFastNonAccelStepper.html">FastNonAccelStepper</a>* instance = <span class="keyword">static_cast&lt;</span><a class="code hl_class" href="classFastNonAccelStepper.html">FastNonAccelStepper</a>*<span class="keyword">&gt;</span>(arg);</div>
+<div class="line"><span class="lineno">  265</span>    uint32_t status;</div>
+<div class="line"><span class="lineno">  266</span>    pcnt_get_event_status(PCNT_UNIT_0, &amp;status);</div>
+<div class="line"><span class="lineno">  267</span> </div>
+<div class="line"><span class="lineno">  268</span>    <span class="keywordflow">if</span> (status &amp; PCNT_EVT_H_LIM) {</div>
+<div class="line"><span class="lineno">  269</span>        instance-&gt;<a class="code hl_variable" href="classFastNonAccelStepper.html#a899dd9ea157d164e660bb15055f0a53d">_overflowCount</a>++;</div>
+<div class="line"><span class="lineno">  270</span>    }</div>
+<div class="line"><span class="lineno">  271</span>    <span class="keywordflow">if</span> (status &amp; PCNT_EVT_L_LIM) {</div>
+<div class="line"><span class="lineno">  272</span>        instance-&gt;<a class="code hl_variable" href="classFastNonAccelStepper.html#a899dd9ea157d164e660bb15055f0a53d">_overflowCount</a>--;</div>
+<div class="line"><span class="lineno">  273</span>    }</div>
+<div class="line"><span class="lineno">  274</span>}</div>
 </div><!-- fragment --><div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -1384,14 +1376,14 @@ Here is the caller graph for this function:</div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00312">312</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
-<div class="fragment"><div class="line"><span class="lineno">  313</span>{</div>
-<div class="line"><span class="lineno">  314</span>    <span class="comment">// set new position</span></div>
-<div class="line"><span class="lineno">  315</span>    <span class="comment">// newPosition_i32 = (getCurrentPosition + oldZeroPos) - (newZeroPos)</span></div>
-<div class="line"><span class="lineno">  316</span>    <span class="comment">// newZeroPos = (getCurrentPosition + oldZeroPos) - newPosition_i32</span></div>
-<div class="line"><span class="lineno">  317</span>    int32_t newZeroPos_i32 = (<a class="code hl_function" href="classFastNonAccelStepper.html#a71264bb7f3544af84ca3a757266fcc70">getCurrentPosition</a>() + <a class="code hl_variable" href="classFastNonAccelStepper.html#ad47dada977c9127a6feab21cba2ad2a4">_zeroPosition_i32</a>) - newPosition_i32;</div>
-<div class="line"><span class="lineno">  318</span>    <a class="code hl_variable" href="classFastNonAccelStepper.html#ad47dada977c9127a6feab21cba2ad2a4">_zeroPosition_i32</a> = newZeroPos_i32;</div>
-<div class="line"><span class="lineno">  319</span>}</div>
+<p class="definition">Definition at line <a class="el" href="FastNonAccelStepper_8cpp_source.html#l00304">304</a> of file <a class="el" href="FastNonAccelStepper_8cpp_source.html">FastNonAccelStepper.cpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  305</span>{</div>
+<div class="line"><span class="lineno">  306</span>    <span class="comment">// set new position</span></div>
+<div class="line"><span class="lineno">  307</span>    <span class="comment">// newPosition_i32 = (getCurrentPosition + oldZeroPos) - (newZeroPos)</span></div>
+<div class="line"><span class="lineno">  308</span>    <span class="comment">// newZeroPos = (getCurrentPosition + oldZeroPos) - newPosition_i32</span></div>
+<div class="line"><span class="lineno">  309</span>    int32_t newZeroPos_i32 = (<a class="code hl_function" href="classFastNonAccelStepper.html#a71264bb7f3544af84ca3a757266fcc70">getCurrentPosition</a>() + <a class="code hl_variable" href="classFastNonAccelStepper.html#ad47dada977c9127a6feab21cba2ad2a4">_zeroPosition_i32</a>) - newPosition_i32;</div>
+<div class="line"><span class="lineno">  310</span>    <a class="code hl_variable" href="classFastNonAccelStepper.html#ad47dada977c9127a6feab21cba2ad2a4">_zeroPosition_i32</a> = newZeroPos_i32;</div>
+<div class="line"><span class="lineno">  311</span>}</div>
 </div><!-- fragment --><div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
