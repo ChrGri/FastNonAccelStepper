@@ -103,7 +103,21 @@ void IRAM_ATTR FastNonAccelStepper::move(long stepsToMove, bool blocking) {
 
 	  // MATLAB code:
 	  // PCNT_MIN_MAX_THRESHOLD = 32767; absStepsToMove = 2*PCNT_MIN_MAX_THRESHOLD; nmbWraps = idivide( int32(absStepsToMove) , int32(PCNT_MIN_MAX_THRESHOLD) ); limit = absStepsToMove / (nmbWraps+1)
-
+	  // close all; clear all; clc;
+	  // PCNT_MIN_MAX_THRESHOLD = 32767; 
+	  // absStepsToMove = int32( (0:1:1000) * PCNT_MIN_MAX_THRESHOLD ); 
+	  // nmbWraps = idivide( int32(absStepsToMove), int32(PCNT_MIN_MAX_THRESHOLD) ); 
+	  // limit = absStepsToMove ./ (nmbWraps+1);
+	  // nexttile()
+	  // plot(limit)
+	  // nexttile()
+  	  // plot(absStepsToMove, (nmbWraps+1) .* limit )
+	  // title('Step output')
+	  // xlabel('True steps \rightarrow')
+	  // ylabel('Actual steps \rightarrow')
+	  // nexttile()
+	  // plot( (nmbWraps+1) .* limit - absStepsToMove)
+	  // title('Step Error')
 		
 	  // compute the number of wraps
 	  long numbWraps = absStepsToMove / PCNT_MIN_MAX_THRESHOLD;
