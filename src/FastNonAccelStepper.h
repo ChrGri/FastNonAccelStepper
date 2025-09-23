@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 
+#define MAX_SPEED_IN_HZ (int32_t)250000
 
 /**
  * @class FastNonAccelStepper
