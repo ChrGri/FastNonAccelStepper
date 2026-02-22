@@ -169,7 +169,7 @@ void IRAM_ATTR FastNonAccelStepper::move(int32_t stepsToMove_i32, bool blocking_
 
       // start mcpwm
       delayMicroseconds(5);
-      _isRunning = true;
+      isRunning_b = true;
       mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);
 
         if (blocking_b)
