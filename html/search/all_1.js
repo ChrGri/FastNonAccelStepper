@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['begin_0',['begin',['../classFastNonAccelStepper.html#a980a5da9747453b101d29b8b3e5024fc',1,'FastNonAccelStepper']]]
+  ['controlpcntisr_0',['controlPCNTISR',['../classFastNonAccelStepper.html#ad78edbb77d1cac5848655d4e6385f2d5',1,'FastNonAccelStepper']]]
 ];

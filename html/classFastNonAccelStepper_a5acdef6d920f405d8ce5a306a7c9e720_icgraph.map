@@ -1,4 +1,4 @@
 <map id="FastNonAccelStepper::begin" name="FastNonAccelStepper::begin">
 <area shape="rect" id="node1" title="Initialize the stepper motor with specified step and direction pins." alt="" coords="220,5,379,45"/>
-<area shape="rect" id="node2" href="$classFastNonAccelStepper.html#a845a234d88fe93df9c2d9b3e883ae68d" title="Constructor to initialize the FastNonAccelStepper." alt="" coords="5,5,172,45"/>
+<area shape="rect" id="node2" href="$classFastNonAccelStepper.html#ac5510d54fd670c500e6f13acfdf8bfa4" title="Constructor to initialize the FastNonAccelStepper." alt="" coords="5,5,172,45"/>
 </map>

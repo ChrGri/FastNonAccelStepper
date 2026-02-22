@@ -2,5 +2,5 @@
 <area shape="rect" id="node1" title="Force the stepper motor to stop and set a new current position." alt="" coords="5,37,204,77"/>
 <area shape="rect" id="node2" href="$classFastNonAccelStepper.html#abd6a0e3d93e72abd9648ee83ff6033bb" title="Force the stepper motor to stop immediately." alt="" coords="252,5,411,45"/>
 <area shape="rect" id="node3" href="$classFastNonAccelStepper.html#a7c1ed5ab044d73d58826262c9ddc6d2f" title="Set the current position of the stepper motor." alt="" coords="252,69,411,109"/>
-<area shape="rect" id="node4" href="$classFastNonAccelStepper.html#a71264bb7f3544af84ca3a757266fcc70" title="Read the current position of the stepper motor." alt="" coords="459,69,617,109"/>
+<area shape="rect" id="node4" href="$classFastNonAccelStepper.html#ab69f03bd58e523c7be59c2fa249fa7ef" title="Read the current position of the stepper motor." alt="" coords="459,69,617,109"/>
 </map>

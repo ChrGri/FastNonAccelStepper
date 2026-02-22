@@ -1,10 +1,8 @@
 <map id="FastNonAccelStepper" name="FastNonAccelStepper">
-<area shape="rect" id="node1" title="A class to control a stepper motor using ESP32&#39;s MCPWM and PCNT modules." alt="" coords="331,167,490,192"/>
+<area shape="rect" id="node1" title="A class to control a stepper motor using ESP32&#39;s MCPWM and PCNT modules." alt="" coords="306,152,465,177"/>
 <area shape="rect" id="node2" title=" " alt="" coords="5,5,72,31"/>
-<area shape="rect" id="node3" title=" " alt="" coords="140,5,191,31"/>
-<area shape="rect" id="node4" title=" " alt="" coords="261,5,336,31"/>
-<area shape="rect" id="node5" title=" " alt="" coords="365,5,457,31"/>
-<area shape="rect" id="node6" title=" " alt="" coords="557,5,624,31"/>
-<area shape="rect" id="node7" title=" " alt="" coords="715,5,765,31"/>
-<area shape="rect" id="node8" title=" " alt="" coords="854,5,973,31"/>
+<area shape="rect" id="node3" title=" " alt="" coords="176,5,243,31"/>
+<area shape="rect" id="node4" title=" " alt="" coords="348,5,423,31"/>
+<area shape="rect" id="node5" title=" " alt="" coords="496,5,547,31"/>
+<area shape="rect" id="node6" title=" " alt="" coords="627,5,749,31"/>
 </map>

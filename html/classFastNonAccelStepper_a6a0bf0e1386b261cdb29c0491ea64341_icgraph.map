@@ -1,6 +1,0 @@
-<map id="FastNonAccelStepper::controlPCNTISR" name="FastNonAccelStepper::controlPCNTISR">
-<area shape="rect" id="node1" title="Handle PCNT events for position control." alt="" coords="633,5,792,45"/>
-<area shape="rect" id="node2" href="$classFastNonAccelStepper.html#a589c329124c424644085bb84778da3ce" title="Initialize the PCNT module for position control." alt="" coords="427,5,585,45"/>
-<area shape="rect" id="node3" href="$classFastNonAccelStepper.html#a980a5da9747453b101d29b8b3e5024fc" title="Initialize the stepper motor with specified step and direction pins." alt="" coords="220,5,379,45"/>
-<area shape="rect" id="node4" href="$classFastNonAccelStepper.html#a845a234d88fe93df9c2d9b3e883ae68d" title="Constructor to initialize the FastNonAccelStepper." alt="" coords="5,5,172,45"/>
-</map>

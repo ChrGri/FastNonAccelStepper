@@ -1,0 +1,6 @@
+<map id="FastNonAccelStepper::setMaxSpeed" name="FastNonAccelStepper::setMaxSpeed">
+<area shape="rect" id="node1" title="Set the maximum speed of the stepper motor." alt="" coords="439,37,597,77"/>
+<area shape="rect" id="node2" href="$classFastNonAccelStepper.html#a23815c758f65aa5d59a7af7ac3125f08" title="Keep the stepper motor running in a specified direction." alt="" coords="232,37,391,77"/>
+<area shape="rect" id="node3" href="$classFastNonAccelStepper.html#a15599d34f9d7f928cf7716af72ee61a6" title="Keep the stepper motor running backward." alt="" coords="5,5,184,45"/>
+<area shape="rect" id="node4" href="$classFastNonAccelStepper.html#ab36c703ba019fd22a0b93942416c0517" title="Keep the stepper motor running forward." alt="" coords="11,69,178,109"/>
+</map>

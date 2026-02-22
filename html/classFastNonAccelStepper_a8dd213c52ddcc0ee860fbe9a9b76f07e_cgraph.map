@@ -1,7 +1,7 @@
 <map id="FastNonAccelStepper::moveTo" name="FastNonAccelStepper::moveTo">
 <area shape="rect" id="node1" title="Update the target position for the stepper motor." alt="" coords="5,37,164,77"/>
-<area shape="rect" id="node2" href="$classFastNonAccelStepper.html#a71264bb7f3544af84ca3a757266fcc70" title="Read the current position of the stepper motor." alt="" coords="212,5,371,45"/>
-<area shape="rect" id="node3" href="$classFastNonAccelStepper.html#a147b71cdebfb914a3ba0a03c79ff57da" title="Move the stepper motor by a specified number of steps." alt="" coords="212,69,371,109"/>
+<area shape="rect" id="node2" href="$classFastNonAccelStepper.html#ab69f03bd58e523c7be59c2fa249fa7ef" title="Read the current position of the stepper motor." alt="" coords="212,5,371,45"/>
+<area shape="rect" id="node3" href="$classFastNonAccelStepper.html#abe70bb6a3e5e488ede81151366875bf2" title="Move the stepper motor by a specified number of steps." alt="" coords="212,69,371,109"/>
 <area shape="rect" id="node4" href="$classFastNonAccelStepper.html#abd6a0e3d93e72abd9648ee83ff6033bb" title="Force the stepper motor to stop immediately." alt="" coords="419,37,577,77"/>
 <area shape="rect" id="node5" href="$classFastNonAccelStepper.html#a0c2278f92792431011674e2798e74675" title="Check if the stepper motor is currently running." alt="" coords="419,101,577,141"/>
 </map>
