@@ -1,0 +1,3 @@
+[submodule "shared/guidelines"]
+	path = shared/guidelines
+	url = https://github.com/ChrGri/c-coding-guidelines.git
