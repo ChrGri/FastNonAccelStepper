@@ -17,12 +17,18 @@ public:
      */
     FastNonAccelStepper(uint8_t stepPin_u8, uint8_t dirPin_u8, bool invertMotorDir_b);
 
-    /**
+        /**
      * @brief Set the maximum speed of the stepper motor.
      * @param speed_u32 Maximum speed in Hz.
      */
     void setMaxSpeed(uint32_t speed_u32);
-	
+    
+    /**
+     * @brief Live update of the speed without stopping the motor.
+     * @param speed_u32 New speed in Hz.
+     */
+    void setSpeedLive(uint32_t speed_u32);
+
 	/**
      * @brief Get the maximum speed of the stepper motor.
      * @return Maximum speed in Hz.

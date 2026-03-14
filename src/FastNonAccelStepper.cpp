@@ -80,7 +80,24 @@ void IRAM_ATTR FastNonAccelStepper::setMaxSpeed(uint32_t speed_u32)
     if (maxSpeed_u32 > 0)
     {
         mcpwm_set_frequency(MCPWM_UNIT_0, MCPWM_TIMER_0, maxSpeed_u32);
+        // Sometimes setting frequency resets duty to 0 or arbitrary values, ensure duty is set
+        mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, PWM_DUTY_CYCLE);
+    }
+    else
+    {
         forceStop();
+    }
+}
+
+void IRAM_ATTR FastNonAccelStepper::setSpeedLive(uint32_t speed_u32)
+{
+    // Constrain the speed to valid limits
+    maxSpeed_u32 = constrain(speed_u32, 1, MAX_SPEED_IN_HZ);
+
+    if (maxSpeed_u32 > 0)
+    {
+        mcpwm_set_frequency(MCPWM_UNIT_0, MCPWM_TIMER_0, maxSpeed_u32);
+        mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, PWM_DUTY_CYCLE);
     }
     else
     {
