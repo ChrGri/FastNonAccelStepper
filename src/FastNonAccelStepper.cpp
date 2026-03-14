@@ -1,19 +1,16 @@
 #include "FastNonAccelStepper.h"
-#include <driver/mcpwm.h>
 #include <driver/pcnt.h>
-
-
 
 
 /************************************************************************/
 /*								Defines 								                              */
 /************************************************************************/
 #define MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE (int32_t)20000
-#define PWM_DUTY_CYCLE 50.0f
 #define PCNT_MIN_MAX_THRESHOLD (int16_t)32767 // INT16_MAX = (2^15)-1 = 32767
 #define POSITION_TRIGGER_THRESHOLD 1
 #define PCNT_FILTER_VALUE 1
-#define MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP 50
+#define RMT_RESOLUTION_HZ 1000000 // 1 MHz resolution, 1 tick = 1 us
+#define PULSE_WIDTH_US 5 // The duration of the high pulse in microseconds
 
 
 /************************************************************************/
@@ -46,28 +43,20 @@ void FastNonAccelStepper::begin(uint8_t stepPin_u8, uint8_t dirPin_u8, bool inve
         dirPcntHctrlMode_u8 = PCNT_MODE_KEEP;
     }
 
-    // init MCPWM and PCNTs
-    initMCPWM();
+        // init RMT and PCNTs
+    initRMT();
     initPCNTMultiturn(); // unit to track the overall position
-    initPCNTControl(); // unit to controll the step bursts
 
-    pinMode(stepPin_u8, OUTPUT);
     pinMode(dirPin_u8, OUTPUT);
-    digitalWrite(stepPin_u8, LOW);
     digitalWrite(dirPin_u8, LOW);
-
-    // configure pin modes
-    mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0A, stepPin_u8);
 
     // connect PCNT to GPIO pin
     gpio_iomux_in(stepPin_u8, PCNT_SIG_CH0_IN0_IDX); // overall position unit
-    gpio_iomux_in(stepPin_u8, PCNT_SIG_CH0_IN1_IDX); // controll unit
 
     // reset pcnt counters
     pcnt_counter_clear(PCNT_UNIT_0); // overall position unit
-    pcnt_counter_clear(PCNT_UNIT_1); // controll unit
 
-    // make sure mcpwm is stopped
+    // make sure RMT is stopped
     forceStop();
 }
 
@@ -75,6 +64,7 @@ void IRAM_ATTR FastNonAccelStepper::setMaxSpeed(uint32_t speed_u32)
 {
     // Constrain the speed to valid limits
     maxSpeed_u32 = constrain(speed_u32, 1, MAX_SPEED_IN_HZ);
+<<<<<<< Updated upstream
 
     // Update the MCPWM timer with the new frequency
     if (maxSpeed_u32 > 0)
@@ -85,7 +75,66 @@ void IRAM_ATTR FastNonAccelStepper::setMaxSpeed(uint32_t speed_u32)
     else
     {
         forceStop();
+=======
+}
+
+void IRAM_ATTR FastNonAccelStepper::setSpeedLive(uint32_t speed_u32)
+{
+    // Only meaningful for MCPWM. We leave it as a no-op or alias for the new trajectory method.
+    maxSpeed_u32 = constrain(speed_u32, 1, MAX_SPEED_IN_HZ);
+}
+
+void IRAM_ATTR FastNonAccelStepper::updateLiveTrajectory(uint32_t speed_u32, uint32_t updateInterval_us)
+{
+    if (speed_u32 == 0) {
+        return;
     }
+    
+    // We want to generate 'speed_u32' pulses per second.
+    // In 'updateInterval_us' microseconds, how many pulses should we send?
+    // pulses = speed * (updateInterval_us / 1,000,000)
+    
+    // Duration of one full pulse cycle (high + low) in microseconds:
+    uint32_t cycleDuration_us = 1000000 / speed_u32;
+    if (cycleDuration_us <= PULSE_WIDTH_US) {
+        cycleDuration_us = PULSE_WIDTH_US + 1; // absolute minimum safeguard
+>>>>>>> Stashed changes
+    }
+    uint32_t lowDuration_us = cycleDuration_us - PULSE_WIDTH_US;
+    
+    // Calculate how many pulses fit in the current update interval
+    uint32_t numPulses = (updateInterval_us * speed_u32) / 1000000;
+    
+    if (numPulses == 0) {
+        return; // nothing to do in this short window for this speed
+    }
+    
+    // Allocate RMT items (max we can allocate dynamically cleanly or statically)
+    // For a 0.3ms window at 250kHz, max pulses = 0.0003 * 250000 = 75 pulses
+    // We'll safely allocate an array large enough for the maximum reasonable expected burst.
+    // Note: If numPulses is larger than this array, we constrain it to avoid stack overflow.
+    const uint32_t MAX_BURST_PULSES = 200; 
+    if (numPulses > MAX_BURST_PULSES) {
+        numPulses = MAX_BURST_PULSES;
+    }
+    
+    rmt_item32_t items[MAX_BURST_PULSES + 1]; // +1 for end marker
+    
+    for (uint32_t i = 0; i < numPulses; i++) {
+        items[i].level0 = 1;
+        items[i].duration0 = PULSE_WIDTH_US * rmtTicksPerUs;
+        items[i].level1 = 0;
+        items[i].duration1 = lowDuration_us * rmtTicksPerUs;
+    }
+    
+    // RMT End Marker
+    items[numPulses].level0 = 0;
+    items[numPulses].duration0 = 0;
+    items[numPulses].level1 = 0;
+    items[numPulses].duration1 = 0;
+
+    // Write sequence to RMT buffer. It will stream automatically.
+    rmt_write_items(rmtChannel, items, numPulses + 1, false);
 }
 
 uint32_t IRAM_ATTR FastNonAccelStepper::getMaxSpeed(void)
@@ -137,51 +186,62 @@ void IRAM_ATTR FastNonAccelStepper::move(int32_t stepsToMove_i32, bool blocking_
         int16_t highLimit_i16;
         int16_t lowLimit_i16;
 
-        // 1) set DIR pin
-        // 2) define upper limit for control pcnt
-        // 3) define lower limit for control pcnt
+                // 1) set DIR pin
+        // 2) stream pulses
         if (stepsToMove_i32 > 0)
         {
             digitalWrite(dirPin_u8, dirLevelForward_b);
-            highLimit_i16 = limit_i16;
-            lowLimit_i16 = -MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP;
-            overflowCountControl_i32 = numbWraps_i32;
         }
         else
         {
             digitalWrite(dirPin_u8, dirLevelBackward_b);
-            highLimit_i16 = MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP;
-            lowLimit_i16 = -limit_i16;
-            overflowCountControl_i32 = numbWraps_i32;
         }
 
-        // parameterize control pcnt
-        pcnt_counter_pause(PCNT_UNIT_1);
-        pcnt_counter_clear(PCNT_UNIT_1);
-        pcnt_set_event_value(PCNT_UNIT_1, PCNT_EVT_H_LIM, highLimit_i16);
-        pcnt_set_event_value(PCNT_UNIT_1, PCNT_EVT_L_LIM, lowLimit_i16);
-        pcnt_event_enable(PCNT_UNIT_1, PCNT_EVT_H_LIM);
-        pcnt_event_enable(PCNT_UNIT_1, PCNT_EVT_L_LIM);
-        pcnt_counter_clear(PCNT_UNIT_1);
-        pcnt_counter_resume(PCNT_UNIT_1);
+        uint32_t speed = maxSpeed_u32;
+        if (speed == 0) speed = 1000;
 
-      //Serial.printf("Hlim: %d,    LLim: %d,    wraps: %d\n", highLimit, lowLimit, numbWraps);
+        uint32_t cycleDurationUs = 1000000 / speed;
+        uint32_t lowDurationUs = cycleDurationUs - PULSE_WIDTH_US;
+        if (cycleDurationUs <= PULSE_WIDTH_US) lowDurationUs = 1;
 
-      // start mcpwm
-      delayMicroseconds(5);
-      isRunning_b = true;
-      mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);
+        // Using RMT, we can just send the exact number of pulses
+        // But since stepsToMove_i32 can be very large (up to MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE),
+        // we should either loop or configure RMT to repeat. We'll build blocks and send them.
+        
+        isRunning_b = true;
+        
+        uint32_t pulsesRemaining = absStepsToMove_i32;
+        const uint32_t MAX_BATCH = 500;
+        
+        while (pulsesRemaining > 0) {
+            uint32_t batch = pulsesRemaining > MAX_BATCH ? MAX_BATCH : pulsesRemaining;
+            
+            rmt_item32_t* items = new rmt_item32_t[batch + 1];
+            
+            for (uint32_t i = 0; i < batch; i++) {
+                items[i].level0 = 1;
+                items[i].duration0 = PULSE_WIDTH_US * rmtTicksPerUs;
+                items[i].level1 = 0;
+                items[i].duration1 = lowDurationUs * rmtTicksPerUs;
+            }
+            
+            items[batch].level0 = 0;
+            items[batch].duration0 = 0;
+            items[batch].level1 = 0;
+            items[batch].duration1 = 0;
+            
+            // Wait for previous transmission to finish
+            rmt_wait_tx_done(rmtChannel, portMAX_DELAY);
+            rmt_write_items(rmtChannel, items, batch + 1, false);
+            
+            delete[] items;
+            pulsesRemaining -= batch;
+        }
 
         if (blocking_b)
         {
-            while(isRunning())
-            {
-                delay(1);
-          /*int16_t pulseCountlcl = 0;
-          pcnt_get_counter_value(PCNT_UNIT_1, &pulseCountlcl);
-          Serial.printf( "CurPos: %d,    CtrlPos:%d,    overfl: %d\n", getCurrentPosition(), pulseCountlcl, _overflowCountControl);
-          delay(30);*/
-            }
+            rmt_wait_tx_done(rmtChannel, portMAX_DELAY);
+            isRunning_b = false;
         }
     }
 }
@@ -203,16 +263,24 @@ int32_t IRAM_ATTR FastNonAccelStepper::getCurrentPosition() const
 }
 
 
-void FastNonAccelStepper::initMCPWM()
+void FastNonAccelStepper::initRMT()
 {
-    mcpwm_config_t pwmConfig;
-    pwmConfig.frequency = maxSpeed_u32;
-    pwmConfig.cmpr_a = PWM_DUTY_CYCLE;
-    pwmConfig.cmpr_b = 0.0f;
-    pwmConfig.counter_mode = MCPWM_UP_COUNTER;
-    pwmConfig.duty_mode = MCPWM_DUTY_MODE_0;
-
-    mcpwm_init(MCPWM_UNIT_0, MCPWM_TIMER_0, &pwmConfig);
+    // Configure RMT TX Channel
+    rmt_config_t rmt_tx;
+    rmt_tx.rmt_mode = RMT_MODE_TX;
+    rmt_tx.channel = rmtChannel;
+    rmt_tx.gpio_num = (gpio_num_t)stepPin_u8;
+    rmt_tx.mem_block_num = 1;
+    rmt_tx.clk_div = 80; // 80MHz APB clock / 80 = 1MHz -> 1 tick = 1us
+    rmt_tx.tx_config.loop_en = false;
+    
+    // Carrier modulation is disabled
+    rmt_tx.tx_config.carrier_en = false;
+    rmt_tx.tx_config.idle_output_en = true;
+    rmt_tx.tx_config.idle_level = RMT_IDLE_LEVEL_LOW;
+    
+    rmt_config(&rmt_tx);
+    rmt_driver_install(rmtChannel, 0, 0);
 }
 
 void FastNonAccelStepper::initPCNTMultiturn()
@@ -297,30 +365,17 @@ void IRAM_ATTR FastNonAccelStepper::multiturnPCNTISR(void* arg_p)
 
 void IRAM_ATTR FastNonAccelStepper::controlPCNTISR(void* arg_p)
 {
-    FastNonAccelStepper* instance_p = static_cast<FastNonAccelStepper*>(arg_p);
-    uint32_t status_u32;
-    pcnt_get_event_status(PCNT_UNIT_1, &status_u32);
-
-    if (status_u32 & PCNT_EVT_H_LIM || status_u32 & PCNT_EVT_L_LIM)
-    {
-        if (instance_p->overflowCountControl_i32 < 1)
-        {
-            instance_p->forceStop();
-        }
-        instance_p->overflowCountControl_i32--;
-    }
+    // Not strictly needed in RMT, unless we want to use it to track bounds
 }
 
 void IRAM_ATTR FastNonAccelStepper::forceStop()
 {
-    // Immediately force the step pin to a known inactive state (LOW).
-    // This prevents an extra step pulse from completing after the stop command is issued from the ISR.
-    // mcpwm_set_signal_low(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A);
-
     // Now, schedule the timer to stop cleanly at the end of its cycle.
-    mcpwm_stop(MCPWM_UNIT_0, MCPWM_TIMER_0);
+    rmt_tx_stop(rmtChannel);
+    // clear buffer
+    rmt_memory_rw_rst(rmtChannel);
     isRunning_b = false;
-}  
+}    
 
 void IRAM_ATTR FastNonAccelStepper::setCurrentPosition(int32_t newPosition_i32)
 {
@@ -358,20 +413,26 @@ void IRAM_ATTR FastNonAccelStepper::keepRunningInDir(bool forwardDir_b, uint32_t
         digitalWrite(dirPin_u8, dirLevelBackward_b);
     }
 
-    pcnt_counter_pause(PCNT_UNIT_1);
-    pcnt_counter_clear(PCNT_UNIT_1);
+        // Using continuous transmission for simple keep running 
+    // In RMT, we can loop the block continuously until stopped
+    uint32_t speed = speed_u32;
+    if(speed == 0) return;
+    
+    uint32_t cycleDurationUs = 1000000 / speed;
+    uint32_t lowDurationUs = cycleDurationUs - PULSE_WIDTH_US;
+    if (cycleDurationUs <= PULSE_WIDTH_US) lowDurationUs = 1;
 
-    pcnt_event_disable(PCNT_UNIT_1, PCNT_EVT_H_LIM);
-    pcnt_event_disable(PCNT_UNIT_1, PCNT_EVT_L_LIM);
+    rmt_item32_t item;
+    item.level0 = 1;
+    item.duration0 = PULSE_WIDTH_US * rmtTicksPerUs;
+    item.level1 = 0;
+    item.duration1 = lowDurationUs * rmtTicksPerUs;
 
-    pcnt_counter_clear(PCNT_UNIT_1);
-    pcnt_counter_resume(PCNT_UNIT_1);
-
-    setMaxSpeed(speed_u32); 
-
-    delayMicroseconds(5);	
+    // enable tx loop in RMT driver directly
+    rmt_set_tx_loop_mode(rmtChannel, true);
+    
     isRunning_b = true;
-    mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);
+    rmt_write_items(rmtChannel, &item, 1, false);
 }
 
 void IRAM_ATTR FastNonAccelStepper::keepRunningForward(uint32_t speed_u32)

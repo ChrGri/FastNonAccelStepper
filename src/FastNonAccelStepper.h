@@ -2,6 +2,7 @@
 #define FASTNONACCELSTEPPER_H
 
 #include <Arduino.h>
+#include <driver/rmt.h>
 
 #define MAX_SPEED_IN_HZ (int32_t)250000
 
@@ -22,7 +23,24 @@ public:
      * @param speed_u32 Maximum speed in Hz.
      */
     void setMaxSpeed(uint32_t speed_u32);
+<<<<<<< Updated upstream
 	
+=======
+    
+	/**
+     * @brief Live update of the speed without stopping the motor.
+     * @param speed_u32 New speed in Hz.
+     */
+    void setSpeedLive(uint32_t speed_u32);
+
+    /**
+     * @brief Run the motor continuously by streaming pulses to RMT block.
+     * @param speed_u32 Current speed in Hz.
+     * @param updateInterval_us The time in micro-seconds for the next sequence duration.
+     */
+    void updateLiveTrajectory(uint32_t speed_u32, uint32_t updateInterval_us);
+
+>>>>>>> Stashed changes
 	/**
      * @brief Get the maximum speed of the stepper motor.
      * @return Maximum speed in Hz.
@@ -113,6 +131,10 @@ private:
     bool isRunning_b = false;
     bool invertMotorDirection_b = false;
 
+    // RMT variables
+    rmt_channel_t rmtChannel = RMT_CHANNEL_0;
+    uint32_t rmtTicksPerUs = 1;
+    
     // Variable to store the DIR pin logic
     bool dirLevelForward_b = true;
     bool dirLevelBackward_b = false;
@@ -122,10 +144,10 @@ private:
 
     QueueHandle_t pcntQueue;   ///< Queue to handle PCNT events.
 
-    /**
-     * @brief Initialize the MCPWM module for step signal generation.
+        /**
+     * @brief Initialize the RMT module for step signal generation.
      */
-    void initMCPWM();
+    void initRMT();
 
     /**
      * @brief Initialize the PCNT module for multiturn position tracking.
