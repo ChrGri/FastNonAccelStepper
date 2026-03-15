@@ -64,18 +64,6 @@ void IRAM_ATTR FastNonAccelStepper::setMaxSpeed(uint32_t speed_u32)
 {
     // Constrain the speed to valid limits
     maxSpeed_u32 = constrain(speed_u32, 1, MAX_SPEED_IN_HZ);
-<<<<<<< Updated upstream
-
-    // Update the MCPWM timer with the new frequency
-    if (maxSpeed_u32 > 0)
-    {
-        mcpwm_set_frequency(MCPWM_UNIT_0, MCPWM_TIMER_0, maxSpeed_u32);
-        forceStop();
-    }
-    else
-    {
-        forceStop();
-=======
 }
 
 void IRAM_ATTR FastNonAccelStepper::setSpeedLive(uint32_t speed_u32)
@@ -98,7 +86,6 @@ void IRAM_ATTR FastNonAccelStepper::updateLiveTrajectory(uint32_t speed_u32, uin
     uint32_t cycleDuration_us = 1000000 / speed_u32;
     if (cycleDuration_us <= PULSE_WIDTH_US) {
         cycleDuration_us = PULSE_WIDTH_US + 1; // absolute minimum safeguard
->>>>>>> Stashed changes
     }
     uint32_t lowDuration_us = cycleDuration_us - PULSE_WIDTH_US;
     
@@ -373,9 +360,9 @@ void IRAM_ATTR FastNonAccelStepper::forceStop()
     // Now, schedule the timer to stop cleanly at the end of its cycle.
     rmt_tx_stop(rmtChannel);
     // clear buffer
-    rmt_memory_rw_rst(rmtChannel);
+    rmt_tx_memory_reset(rmtChannel);
     isRunning_b = false;
-}    
+}        
 
 void IRAM_ATTR FastNonAccelStepper::setCurrentPosition(int32_t newPosition_i32)
 {

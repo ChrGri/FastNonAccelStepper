@@ -22,10 +22,7 @@ public:
      * @brief Set the maximum speed of the stepper motor.
      * @param speed_u32 Maximum speed in Hz.
      */
-    void setMaxSpeed(uint32_t speed_u32);
-<<<<<<< Updated upstream
-	
-=======
+        void setMaxSpeed(uint32_t speed_u32);
     
 	/**
      * @brief Live update of the speed without stopping the motor.
@@ -40,7 +37,6 @@ public:
      */
     void updateLiveTrajectory(uint32_t speed_u32, uint32_t updateInterval_us);
 
->>>>>>> Stashed changes
 	/**
      * @brief Get the maximum speed of the stepper motor.
      * @return Maximum speed in Hz.
