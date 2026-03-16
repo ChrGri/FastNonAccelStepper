@@ -1,26 +1,27 @@
 #include "FastNonAccelStepper.h"
 #include <rom/gpio.h> 
 #include <driver/gpio.h> 
-#include "soc/gpio_sig_map.h"
-#include "esp_rom_gpio.h" // Needed for V5 internal signal routing
+#include "soc/gpio_sig_map.h" // Needed for explicit internal signal routing
 
 // PCNT limits (16-bit integer max)
 #define PCNT_MIN_MAX_THRESHOLD (int16_t)32767
 #define PCNT_FILTER_VALUE 1
+
 
 FastNonAccelStepper::FastNonAccelStepper(uint8_t stepPin_u8, uint8_t dirPin_u8, bool invertMotorDir_b)
     : stepPin_u8(stepPin_u8), dirPin_u8(dirPin_u8), invertMotorDirection_b(invertMotorDir_b),
       targetPosition_i32(0), stepsRemaining_i32(0), maxSpeed_u32(1000), 
       currentIntervalUs_u32(1000), directionMultiplier_i8(1),
       isRunning_b(false), runInfinite_b(false), rmtTaskHandle(NULL),
-      rmtChannel_e(NULL), copy_encoder(NULL),
       overflowCount_i32(0), zeroPosition_i32(0),
       expectedCycleTimeUs_u32(300) 
 {
 }
 
-void FastNonAccelStepper::begin(int rmtChannel)
+void FastNonAccelStepper::begin(rmt_channel_t rmtChannel)
 {
+    rmtChannel_e = rmtChannel;
+
     pinMode(stepPin_u8, OUTPUT);
     pinMode(dirPin_u8, OUTPUT);
     digitalWrite(stepPin_u8, LOW);
@@ -42,35 +43,38 @@ void FastNonAccelStepper::begin(int rmtChannel)
     // 2. Initialize Hardware PCNT Multiturn Tracker
     initPCNTMultiturn();
     
-    // 3. Configure Hardware RMT Pulse Generator (V5 Next-Gen API)
-    rmt_tx_channel_config_t tx_chan_config = {};
-    tx_chan_config.clk_src = RMT_CLK_SRC_DEFAULT;
-    tx_chan_config.gpio_num = (gpio_num_t)stepPin_u8;
-    tx_chan_config.mem_block_symbols = 64;           
-    tx_chan_config.resolution_hz = 1000000; 
-    tx_chan_config.trans_queue_depth = 4;   
-    
-    // --- THE V5 MAGIC BULLET ---
-    // This official flag tells the RMT driver to keep the input buffer ON 
-    // so our PCNT peripheral can listen to the pulses flawlessly.
-    tx_chan_config.flags.io_loop_back = true; 
-    
-    rmt_new_tx_channel(&tx_chan_config, &rmtChannel_e);
+    // 3. Configure Hardware RMT Pulse Generator 
+    rmt_config_t rmt_tx = {}; 
+    rmt_tx.rmt_mode = RMT_MODE_TX;
+    rmt_tx.channel = rmtChannel_e;
+    rmt_tx.gpio_num = (gpio_num_t)stepPin_u8;
+    rmt_tx.mem_block_num = 1;        
+    rmt_tx.clk_div = 80;             
+    rmt_tx.tx_config.loop_en = false;
+    rmt_tx.tx_config.carrier_en = false;
+    rmt_tx.tx_config.idle_output_en = true;             
+    rmt_tx.tx_config.idle_level = RMT_IDLE_LEVEL_LOW;   
 
-    rmt_copy_encoder_config_t copy_encoder_config = {};
-    rmt_new_copy_encoder(&copy_encoder_config, &copy_encoder);
-
-    rmt_enable(rmtChannel_e);
+    rmt_config(&rmt_tx);
+    rmt_driver_install(rmtChannel_e, 0, 1024);
 
     // ----------------------------------------------------------------------
-    // THE V5 SIGNAL ROUTING
+    // THE ULTIMATE MATRIX OVERRIDE (Fixes the Position == 0 Bug)
     // ----------------------------------------------------------------------
-    // Force the DIR pin to be bidirectional so PCNT can read it and overcome crosstalk.
-    gpio_set_direction((gpio_num_t)dirPin_u8, GPIO_MODE_INPUT_OUTPUT); 
+    // The RMT and PCNT drivers secretly turn off the output/input buffers. 
+    // We must manually force BOTH pins to be bidirectional (INPUT_OUTPUT).
+    gpio_set_direction((gpio_num_t)stepPin_u8, GPIO_MODE_INPUT_OUTPUT);
+    gpio_set_direction((gpio_num_t)dirPin_u8, GPIO_MODE_INPUT_OUTPUT); // <-- THE FIX
     
-    // Route the physical pins to the PCNT input channels
-    esp_rom_gpio_connect_in_signal(stepPin_u8, PCNT_SIG_CH0_IN0_IDX, false);
-    esp_rom_gpio_connect_in_signal(dirPin_u8, PCNT_SIG_CH0_IN1_IDX, false);
+    // Wire the RMT pulse generator directly to the step pin
+    uint32_t rmt_tx_signal = RMT_SIG_OUT0_IDX + rmtChannel_e;
+    gpio_matrix_out((gpio_num_t)stepPin_u8, rmt_tx_signal, false, false);
+    
+    // Wire the step pin directly into the PCNT tracker (Pulse Channel)
+    gpio_matrix_in((gpio_num_t)stepPin_u8, PCNT_SIG_CH0_IN0_IDX, false);
+
+    // Wire the dir pin directly into the PCNT tracker (Control Channel)
+    gpio_matrix_in((gpio_num_t)dirPin_u8, PCNT_SIG_CH0_IN1_IDX, false); // <-- THE FIX
     // ----------------------------------------------------------------------
 
     // 4. Start the Background FreeRTOS Task
@@ -157,7 +161,7 @@ void FastNonAccelStepper::rmtFeedTaskWrapper(void *pvParameters)
 void FastNonAccelStepper::rmtFeedTask()
 {
     const int MAX_BATCH = 100;
-    rmt_symbol_word_t step_batch[MAX_BATCH];
+    rmt_item32_t step_batch[MAX_BATCH];
 
     while (true) 
     {
@@ -188,10 +192,7 @@ void FastNonAccelStepper::rmtFeedTask()
                     step_batch[i].level1    = 0;
                 }
 
-                rmt_transmit_config_t tx_config = {};
-                tx_config.loop_count = 0; 
-                
-                esp_err_t transmit_result = rmt_transmit(rmtChannel_e, copy_encoder, step_batch, pulses_in_batch * sizeof(rmt_symbol_word_t), &tx_config);
+                esp_err_t transmit_result = rmt_write_items(rmtChannel_e, step_batch, pulses_in_batch, false);
                 
                 if (transmit_result == ESP_OK) {
                     if (!runInfinite_b) {
@@ -203,7 +204,7 @@ void FastNonAccelStepper::rmtFeedTask()
             } 
             else 
             {
-                rmt_tx_wait_all_done(rmtChannel_e, -1);
+                rmt_wait_tx_done(rmtChannel_e, portMAX_DELAY);
                 isRunning_b = false;
             }
         } 
@@ -256,6 +257,10 @@ void IRAM_ATTR FastNonAccelStepper::move(int32_t stepsToMove_i32, bool blocking_
     runInfinite_b = false;
     isRunning_b = true; 
 
+    // Reconnect the RMT hardware to the pin in the matrix
+    uint32_t rmt_tx_signal = RMT_SIG_OUT0_IDX + rmtChannel_e;
+    gpio_matrix_out((gpio_num_t)stepPin_u8, rmt_tx_signal, false, false);
+
     if (blocking_b) {
         while(isRunning_b) delay(1);
     }
@@ -266,16 +271,18 @@ void IRAM_ATTR FastNonAccelStepper::moveTo(int32_t targetPos_i32, bool blocking_
 } 
 
 void IRAM_ATTR FastNonAccelStepper::forceStop() {
+    // 1. Instantly detach RMT from the physical pin. The motor stops IMMEDIATELY.
+    gpio_matrix_out((gpio_num_t)stepPin_u8, SIG_GPIO_OUT_IDX, false, false);
+    digitalWrite(stepPin_u8, LOW); 
+
+    // 2. Tell the FreeRTOS task to stop generating new pulses.
+    // The hardware will instantly drain whatever is left in the queue harmlessly.
     isRunning_b = false;
     stepsRemaining_i32 = 0;
     runInfinite_b = false;
     
-    // In V5, disabling and re-enabling flushes the active transmission safely.
-    // The driver maintains ownership of the pin at all times!
-    if (rmtChannel_e != NULL) {
-        rmt_disable(rmtChannel_e);
-        rmt_enable(rmtChannel_e);
-    }
+    rmt_tx_stop(rmtChannel_e);
+    rmt_memory_rw_rst(rmtChannel_e); 
 }  
 
 void IRAM_ATTR FastNonAccelStepper::forceStopAndNewPosition(int32_t newPosition_i32) {
@@ -288,6 +295,8 @@ bool IRAM_ATTR FastNonAccelStepper::isRunning() {
 }
 
 void IRAM_ATTR FastNonAccelStepper::keepRunningInDir(bool forwardDir_b, uint32_t speed_u32) {
+    // Note: No forceStop() here! This allows seamless crossing of the 0-speed boundary
+    
     if (forwardDir_b) {
         digitalWrite(dirPin_u8, dirLevelForward_b);
         directionMultiplier_i8 = 1;
@@ -299,6 +308,10 @@ void IRAM_ATTR FastNonAccelStepper::keepRunningInDir(bool forwardDir_b, uint32_t
     setSpeedLive(speed_u32); 
     runInfinite_b = true;
     isRunning_b = true; 
+
+    // Ensure the RMT hardware is actively routed to the pin
+    uint32_t rmt_tx_signal = RMT_SIG_OUT0_IDX + rmtChannel_e;
+    gpio_matrix_out((gpio_num_t)stepPin_u8, rmt_tx_signal, false, false);
 }
 
 void IRAM_ATTR FastNonAccelStepper::keepRunningForward(uint32_t speed_u32) {
