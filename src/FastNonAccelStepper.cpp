@@ -279,39 +279,39 @@ void IRAM_ATTR FastNonAccelStepper::setMaxSpeed(uint32_t speed_u32)
 
 void IRAM_ATTR FastNonAccelStepper::setSpeedLive(uint32_t speed_u32) 
 {
-    // 1. Check if speed is below the minimum threshold
-    if (speed_u32 < MINIMUM_PULSE_FREQUENCY_U32)
+    uint32_t effectiveSpeed_u32 = speed_u32;
+
+    // 1. Handle speeds below the physical hardware limit to prevent timer overflow
+    if (effectiveSpeed_u32 < MINIMUM_PULSE_FREQUENCY_U32)
     {
-        // Disable output by stopping the timer
-        if (mcpwmTimer_pst != NULL) 
-        {
-            mcpwm_timer_start_stop(mcpwmTimer_pst, MCPWM_TIMER_STOP_EMPTY);
-        }
-        isRunning_b = false;
-        return;
+        // Clamp to minimum frequency instead of stopping to avoid restart spikes
+        effectiveSpeed_u32 = MINIMUM_PULSE_FREQUENCY_U32;
     }
 
-    // 2. Limit speed to the hardware maximum
-    maxSpeed_u32 = constrain(speed_u32, MINIMUM_PULSE_FREQUENCY_U32, MAX_SPEED_IN_HZ);
+    // 2. Constrain speed to the defined hardware/software maximum
+    if (effectiveSpeed_u32 > MAX_SPEED_IN_HZ)
+    {
+        effectiveSpeed_u32 = MAX_SPEED_IN_HZ;
+    }
     
     // 3. Calculation based on 10MHz Resolution
-    uint32_t newInterval_u32 = TIMER_RESOLUTION_IN_HZ_U32 / maxSpeed_u32;
+    uint32_t newInterval_u32 = TIMER_RESOLUTION_IN_HZ_U32 / effectiveSpeed_u32;
     
+    // 4. Update hardware only if the interval has changed
     if (newInterval_u32 != currentIntervalUs_u32) 
     {
         currentIntervalUs_u32 = newInterval_u32;
         
         if (mcpwmTimer_pst != NULL) 
         {
-            // Update period and comparator
-            mcpwm_timer_set_period(mcpwmTimer_pst, currentIntervalUs_u32);
-            mcpwm_comparator_set_compare_value(mcpwmCmpr_pst, currentIntervalUs_u32 / 2);
+            // Update the period (16-bit) and the comparator (50% duty cycle)
+            mcpwm_timer_set_period(mcpwmTimer_pst, (uint16_t)currentIntervalUs_u32);
+            mcpwm_comparator_set_compare_value(mcpwmCmpr_pst, (uint16_t)(currentIntervalUs_u32 / 2));
             
-            // Ensure timer is running if we were previously below min frequency
-            if (!isRunning_b)
+            // If the stepper is supposed to be active but the timer is stopped, restart it
+            if (isRunning_b)
             {
                 mcpwm_timer_start_stop(mcpwmTimer_pst, MCPWM_TIMER_START_NO_STOP);
-                isRunning_b = true;
             }
         }
     }
