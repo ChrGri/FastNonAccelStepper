@@ -14,7 +14,7 @@
 #define PCNT_FILTER_VALUE_I32 1
 #define MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP_I32 50
 #define TIMER_RESOLUTION_IN_HZ_U32 10000000
-#define MINIMUM_PULSE_FREQUENCY_U32 (uint32_t)20
+#define MINIMUM_PULSE_FREQUENCY_U32 (uint32_t)(TIMER_RESOLUTION_IN_HZ_U32 / UINT16_MAX + 1u) // minimum technically possible PWM frequency
 
 /************************************************************************/
 /* Implementation                            */
