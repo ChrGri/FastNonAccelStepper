@@ -5,7 +5,7 @@
 #include "esp_rom_gpio.h" 
 
 /************************************************************************/
-/* Defines                               */
+/* Defines                                                              */
 /************************************************************************/
 #define MAX_ALLOWED_POSITION_CHANGE_PER_CYCLE_I32 (int32_t)20000
 #define PWM_DUTY_CYCLE_FL32 50.0f
@@ -14,17 +14,17 @@
 #define PCNT_FILTER_VALUE_I32 1
 #define MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP_I32 50
 #define TIMER_RESOLUTION_IN_HZ_U32 10000000
-#define MINIMUM_PULSE_FREQUENCY_U32 (uint32_t)(TIMER_RESOLUTION_IN_HZ_U32 / UINT16_MAX + 1u) // minimum technically possible PWM frequency
+#define MINIMUM_PULSE_FREQUENCY_U32 (uint32_t)(TIMER_RESOLUTION_IN_HZ_U32 / UINT16_MAX + 1u)
 
 /************************************************************************/
-/* Implementation                            */
+/* Implementation                                                       */
 /************************************************************************/
 
 FastNonAccelStepper::FastNonAccelStepper(uint8_t stepPin_u8, uint8_t dirPin_u8, bool invertMotorDir_b)
     : stepPin_u8(stepPin_u8), dirPin_u8(dirPin_u8), invertMotorDirection_b(invertMotorDir_b),
       targetPosition_i32(0), stepsRemaining_i32(0), maxSpeed_u32(1000), 
-      currentIntervalUs_u32(1000), directionMultiplier_i8(1),
-      isRunning_b(false), runInfinite_b(false), monitorTaskHandle_pv(NULL),
+      currentIntervalUs_u32(0), directionMultiplier_i8(1),
+      isRunning_b(false), runInfinite_b(false), 
       mcpwmTimer_pst(NULL), mcpwmOper_pst(NULL), mcpwmCmpr_pst(NULL), mcpwmGen_pst(NULL),
       overflowCount_i32(0), overflowCountControl_i32(0), zeroPosition_i32(0),
       expectedCycleTimeUs_u32(300) 
@@ -109,17 +109,6 @@ void FastNonAccelStepper::begin(int timerGroup_i32)
     pcnt_counter_clear(PCNT_UNIT_0); // overall position unit
     pcnt_counter_clear(PCNT_UNIT_1); // control unit
 
-    // Start the Hardware Stop Task
-    xTaskCreatePinnedToCore(
-        monitorTaskWrapper,
-        "MCPWM_Monitor_Task",
-        4096,                    
-        this,                    
-        configMAX_PRIORITIES - 1,
-        &monitorTaskHandle_pv,
-        1                        
-    );
-
     // make sure mcpwm is stopped
     forceStop();
 }
@@ -152,9 +141,6 @@ void FastNonAccelStepper::initPCNTMultiturn()
 
     pcnt_isr_service_install(0);
     pcnt_isr_handler_add(PCNT_UNIT_0, multiturnPCNTISR, this);
-    
-    pcnt_counter_clear(PCNT_UNIT_0);
-    pcnt_counter_resume(PCNT_UNIT_0);
 }
 
 void FastNonAccelStepper::initPCNTControl()
@@ -184,9 +170,6 @@ void FastNonAccelStepper::initPCNTControl()
     pcnt_event_enable(PCNT_UNIT_1, PCNT_EVT_L_LIM);
 
     pcnt_isr_handler_add(PCNT_UNIT_1, controlPCNTISR, this);
-    
-    pcnt_counter_clear(PCNT_UNIT_1);
-    pcnt_counter_resume(PCNT_UNIT_1);
 }
 
 void IRAM_ATTR FastNonAccelStepper::multiturnPCNTISR(void* arg_pv)
@@ -215,37 +198,12 @@ void IRAM_ATTR FastNonAccelStepper::controlPCNTISR(void* arg_pv)
     {
         if (instance_pst->overflowCountControl_i32 < 1)
         {
-            // Signal stop task
-            BaseType_t highTaskWakeup_st = pdFALSE;
-            vTaskNotifyGiveFromISR(instance_pst->monitorTaskHandle_pv, &highTaskWakeup_st);
-            
-            if (highTaskWakeup_st == pdTRUE) 
-            {
-                portYIELD_FROM_ISR(); 
-            }
+            // Immediately stop pulses once the control limit is reached
+            instance_pst->forceStop(); 
         }
         else
         {
             instance_pst->overflowCountControl_i32--;
-        }
-    }
-}
-
-void FastNonAccelStepper::monitorTaskWrapper(void* pvParameters_pv)
-{
-    FastNonAccelStepper* instance_pst = static_cast<FastNonAccelStepper*>(pvParameters_pv);
-    instance_pst->monitorTask();
-}
-
-void FastNonAccelStepper::monitorTask()
-{
-    while (true) 
-    {
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-        
-        if (isRunning_b && !runInfinite_b) 
-        {
-            forceStop();
         }
     }
 }
@@ -289,9 +247,9 @@ void IRAM_ATTR FastNonAccelStepper::setSpeedLive(uint32_t speed_u32)
     }
 
     // 2. Constrain speed to the defined hardware/software maximum
-    if (effectiveSpeed_u32 > MAX_SPEED_IN_HZ)
+    if (effectiveSpeed_u32 > MAX_SPEED_IN_HZ_I32)
     {
-        effectiveSpeed_u32 = MAX_SPEED_IN_HZ;
+        effectiveSpeed_u32 = MAX_SPEED_IN_HZ_I32;
     }
     
     // 3. Calculation based on 10MHz Resolution
@@ -331,34 +289,19 @@ void IRAM_ATTR FastNonAccelStepper::move(int32_t stepsToMove_i32, bool blocking_
 
     if (absStepsToMove_i32 > POSITION_TRIGGER_THRESHOLD_I32)
     {
-		// MATLAB code:
-	    // PCNT_MIN_MAX_THRESHOLD = 32767; absStepsToMove = 2*PCNT_MIN_MAX_THRESHOLD; nmbWraps = idivide( int32(absStepsToMove) , int32(PCNT_MIN_MAX_THRESHOLD) ); limit = absStepsToMove / (nmbWraps+1)
-	    // close all; clear all; clc;
-	    // PCNT_MIN_MAX_THRESHOLD = 32767; 
-	    // absStepsToMove = int32( (0:1:1000) * PCNT_MIN_MAX_THRESHOLD ); 
-	    // nmbWraps = idivide( int32(absStepsToMove), int32(PCNT_MIN_MAX_THRESHOLD) ); 
-	    // limit = absStepsToMove ./ (nmbWraps+1);
-	    // nexttile()
-	    // plot(limit)
-	    // nexttile()
-	    // plot(absStepsToMove, (nmbWraps+1) .* limit )
-	    // title('Step output')
-	    // xlabel('True steps \rightarrow')
-	    // ylabel('Actual steps \rightarrow')
-	    // nexttile()
-	    // plot( (nmbWraps+1) .* limit - absStepsToMove)
-	    // title('Step Error')
-		
-		
-	  
+        /* MATLAB code logic:
+           PCNT_MIN_MAX_THRESHOLD = 32767; absStepsToMove = 2*PCNT_MIN_MAX_THRESHOLD; 
+           nmbWraps = idivide( int32(absStepsToMove) , int32(PCNT_MIN_MAX_THRESHOLD) ); 
+           limit = absStepsToMove / (nmbWraps+1) */
+        
         // compute the number of wraps
         int32_t numbWraps_i32 = absStepsToMove_i32 / PCNT_MIN_MAX_THRESHOLD_I16;
 
-        // divide into equally spaced bursts, e.g. when
-        // if absStepsToMove is < PCNT_MIN_MAX_THRESHOLD --> numbWraps = 0 and limit_i16 = absStepsToMove
-        // if absStepsToMove == PCNT_MIN_MAX_THRESHOLD --> numbWraps = 1 and limit_i16 = absStepsToMove/2
-        // if absStepsToMove == 2*PCNT_MIN_MAX_THRESHOLD --> numbWraps = 2 and limit_i16 = absStepsToMove/3
-        // if absStepsToMove > PCNT_MIN_MAX_THRESHOLD --> numbWraps >= 1
+        /* divide into equally spaced bursts, e.g. when
+           if absStepsToMove is < PCNT_MIN_MAX_THRESHOLD --> numbWraps = 0 and limit_i16 = absStepsToMove
+           if absStepsToMove == PCNT_MIN_MAX_THRESHOLD --> numbWraps = 1 and limit_i16 = absStepsToMove/2
+           if absStepsToMove == 2*PCNT_MIN_MAX_THRESHOLD --> numbWraps = 2 and limit_i16 = absStepsToMove/3
+           if absStepsToMove > PCNT_MIN_MAX_THRESHOLD --> numbWraps >= 1 */
         int32_t limit_i32 = absStepsToMove_i32 / (numbWraps_i32 + 1);
         int16_t limit_i16 = (int16_t)constrain(limit_i32, 0, PCNT_MIN_MAX_THRESHOLD_I16);
 
@@ -393,7 +336,6 @@ void IRAM_ATTR FastNonAccelStepper::move(int32_t stepsToMove_i32, bool blocking_
         pcnt_set_event_value(PCNT_UNIT_1, PCNT_EVT_L_LIM, lowLimit_i16);
         pcnt_event_enable(PCNT_UNIT_1, PCNT_EVT_H_LIM);
         pcnt_event_enable(PCNT_UNIT_1, PCNT_EVT_L_LIM);
-        pcnt_counter_clear(PCNT_UNIT_1);
         pcnt_counter_resume(PCNT_UNIT_1);
 
         // start mcpwm
@@ -407,7 +349,7 @@ void IRAM_ATTR FastNonAccelStepper::move(int32_t stepsToMove_i32, bool blocking_
 
         if (blocking_b) 
         {
-            while(isRunning()) 
+            while(isRunning_b) 
             {
                 delay(1);
             }
@@ -470,14 +412,13 @@ void IRAM_ATTR FastNonAccelStepper::keepRunningInDir(bool forwardDir_b, uint32_t
     pcnt_counter_clear(PCNT_UNIT_1);
     pcnt_event_disable(PCNT_UNIT_1, PCNT_EVT_H_LIM);
     pcnt_event_disable(PCNT_UNIT_1, PCNT_EVT_L_LIM);
-    pcnt_counter_clear(PCNT_UNIT_1);
     pcnt_counter_resume(PCNT_UNIT_1);
 
+    isRunning_b = true; 
     setSpeedLive(speed_u32); 
     
     delayMicroseconds(5);
     runInfinite_b = true;
-    isRunning_b = true; 
     
     mcpwm_timer_start_stop(mcpwmTimer_pst, MCPWM_TIMER_START_NO_STOP);
 }

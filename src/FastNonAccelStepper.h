@@ -47,23 +47,19 @@ private:
     uint8_t dirPcntLctrlMode_u8;
     uint8_t dirPcntHctrlMode_u8;
     volatile int32_t overflowCount_i32;
-    volatile int32_t overflowCountControl_i32; // Restored from original
+    volatile int32_t overflowCountControl_i32; 
     int32_t zeroPosition_i32;
     
     void initPCNTMultiturn();
-    void initPCNTControl(); // Restored from original
+    void initPCNTControl(); 
     static void IRAM_ATTR multiturnPCNTISR(void* arg_pv);
-    static void IRAM_ATTR controlPCNTISR(void* arg_pv); // Restored from original
+    static void IRAM_ATTR controlPCNTISR(void* arg_pv); 
 
     // MCPWM V5 Hardware Handles
     mcpwm_timer_handle_t mcpwmTimer_pst;
     mcpwm_oper_handle_t mcpwmOper_pst;
     mcpwm_cmpr_handle_t mcpwmCmpr_pst;
     mcpwm_gen_handle_t mcpwmGen_pst;
-
-    TaskHandle_t monitorTaskHandle_pv;
-    static void monitorTaskWrapper(void* pvParameters_pv);
-    void monitorTask();
 
     // State Variables
     volatile int32_t targetPosition_i32;
