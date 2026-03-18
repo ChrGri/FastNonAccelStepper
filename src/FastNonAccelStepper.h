@@ -2,7 +2,7 @@
 #define FAST_NON_ACCEL_STEPPER_H
 
 #include <Arduino.h>
-#include "driver/rmt_tx.h" // ESP-IDF V5 Next Generation RMT API
+#include "driver/mcpwm_prelude.h" 
 #include "driver/pcnt.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -11,8 +11,7 @@ class FastNonAccelStepper {
 public:
     FastNonAccelStepper(uint8_t stepPin_u8, uint8_t dirPin_u8, bool invertMotorDir_b = false);
     
-    // In V5, channels are assigned dynamically, but we keep the parameter for backwards compatibility
-    void begin(int rmtChannel = 0);
+    void begin(int timerGroup = 0);
 
     void IRAM_ATTR setMaxSpeed(uint32_t speed_u32);
     void IRAM_ATTR setSpeedLive(uint32_t speed_u32);
@@ -41,20 +40,27 @@ private:
     uint8_t dirLevelForward_b;
     uint8_t dirLevelBackward_b;
 
-    // PCNT Hardware Tracking
+    // --- PCNT Hardware Tracking (Restored Dual-Unit Architecture) ---
     uint8_t dirPcntLctrlMode_u8;
     uint8_t dirPcntHctrlMode_u8;
     volatile int32_t overflowCount_i32;
+    volatile int32_t overflowCountControl_i32; // Restored from original
     int32_t zeroPosition_i32;
+    
     void initPCNTMultiturn();
+    void initPCNTControl(); // Restored from original
     static void IRAM_ATTR multiturnPCNTISR(void* arg_p);
+    static void IRAM_ATTR controlPCNTISR(void* arg_p); // Restored from original
 
-    // RMT V5 Hardware Handles
-    rmt_channel_handle_t rmtChannel_e; 
-    rmt_encoder_handle_t copy_encoder; 
-    TaskHandle_t rmtTaskHandle;
-    static void rmtFeedTaskWrapper(void *pvParameters);
-    void rmtFeedTask();
+    // MCPWM V5 Hardware Handles
+    mcpwm_timer_handle_t mcpwm_timer;
+    mcpwm_oper_handle_t mcpwm_oper;
+    mcpwm_cmpr_handle_t mcpwm_cmpr;
+    mcpwm_gen_handle_t mcpwm_gen;
+
+    TaskHandle_t monitorTaskHandle;
+    static void monitorTaskWrapper(void *pvParameters);
+    void monitorTask();
 
     // State Variables
     volatile int32_t targetPosition_i32;
