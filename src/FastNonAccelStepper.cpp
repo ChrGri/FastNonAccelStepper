@@ -77,7 +77,10 @@ void FastNonAccelStepper::begin(int timerGroup_i32)
 
 void IRAM_ATTR FastNonAccelStepper::setMaxSpeed(uint32_t speed_u32)
 {
-    // Constrain the speed to valid limits
+
+    setSpeedLive(speed_u32);
+
+    /* // Constrain the speed to valid limits
     maxSpeed_u32 = constrain(speed_u32, 1, MAX_SPEED_IN_HZ);
 
     // Update the MCPWM timer with the new frequency
@@ -90,6 +93,7 @@ void IRAM_ATTR FastNonAccelStepper::setMaxSpeed(uint32_t speed_u32)
     {
         forceStop();
     }
+        */
 }
 
 uint32_t IRAM_ATTR FastNonAccelStepper::getMaxSpeed(void)
@@ -422,6 +426,20 @@ void IRAM_ATTR FastNonAccelStepper::setSpeedLive(uint32_t speed_u32)
     // 1. Sicherheitsschranke (Hardwarelimit)
     uint32_t effectiveSpeed_u32 = constrain(speed_u32, MINIMUM_PULSE_FREQUENCY_U32, MAX_SPEED_IN_HZ);
     
+    if (speed_u32 < MINIMUM_PULSE_FREQUENCY_U32) 
+    {
+        // Geschwindigkeit zu gering: Ausgang hart auf LOW zwingen
+        // gen_a_cntuforce_mode: 0=disabled, 1=low, 2=high
+        MCPWM0.operators[0].gen_force.gen_a_cntuforce_mode = 1; 
+        
+        // Wir setzen isRunning_b nicht auf false, damit der Stream 
+        // im Loop aktiv bleibt, aber es kommen keine physikalischen Pulse raus.
+        return; 
+    }
+
+    // Falls der Ausgang zuvor blockiert war: Force aufheben (0 = disabled)
+    MCPWM0.operators[0].gen_force.gen_a_cntuforce_mode = 0;
+
     // Nun stimmt die Relation: 10MHz / Frequenz = Perioden-Ticks
     uint32_t period = TIMER_RESOLUTION_IN_HZ_U32 / effectiveSpeed_u32;
 

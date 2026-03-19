@@ -44,8 +44,8 @@ void loop()
 
         float positionDifference_fl32 = posSoll_fl32 - _stepper->getCurrentPosition();
         float velocityToApply_fl32 = 1.1f * positionDifference_fl32 / loopIntervalUs_u32 * 1000000.0f; 
-
-        vSoll_fl32 = constrain(abs(velocityToApply_fl32), 10, MAX_SPEED_IN_HZ);
+        vSoll_fl32 = velocityToApply_fl32;
+        //vSoll_fl32 = constrain(abs(velocityToApply_fl32), 10, MAX_SPEED_IN_HZ);
 
 
         //_stepper->moveTo((int32_t)posSoll_fl32, false);
