@@ -469,7 +469,9 @@ void IRAM_ATTR FastNonAccelStepper::setSpeedLive(uint32_t speed_u32)
 
     // 3. Periodenberechnung
     uint32_t effectiveSpeed = (speed_u32 < 10) ? 10 : speed_u32; 
-    uint32_t period = used_clk / effectiveSpeed;
+    uint32_t period = used_clk / effectiveSpeed;    
+
+    maxSpeed_u32 = speed_u32;
 
     // Hardware-Korrektur: Die Periode im Register ist N-1 Ticks
     if (period > 0) period--; 
