@@ -247,9 +247,9 @@ void IRAM_ATTR FastNonAccelStepper::setSpeedLive(uint32_t speed_u32)
     }
 
     // 2. Constrain speed to the defined hardware/software maximum
-    if (effectiveSpeed_u32 > MAX_SPEED_IN_HZ_I32)
+    if (effectiveSpeed_u32 > MAX_SPEED_IN_HZ)
     {
-        effectiveSpeed_u32 = MAX_SPEED_IN_HZ_I32;
+        effectiveSpeed_u32 = MAX_SPEED_IN_HZ;
     }
     
     // 3. Calculation based on 10MHz Resolution
