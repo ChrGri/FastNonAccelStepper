@@ -32,8 +32,8 @@ void loop()
 {
     unsigned long currentMicros_u32 = micros();
 
-#define VIA_PSOITIONING_COMMAND
-#ifdef VIA_PSOITIONING_COMMAND
+//#define VIA_POSITIONING_COMMAND
+#ifdef VIA_POSITIONING_COMMAND
     if (currentMicros_u32 - previousMicros_u32 >= loopIntervalUs_u32) 
     {
         previousMicros_u32 = currentMicros_u32;
@@ -73,7 +73,7 @@ void loop()
         //float vSoll_fl32 = amplitude_fl32 * (2.0f * PI * targetHz_fl32) * cos(2.0f * PI * targetHz_fl32 * t_fl32);
 
 
-        float vSoll_fl32 = 2500.0f * cos(2.0f * PI * targetHz_fl32 * t_fl32);
+        float vSoll_fl32 = 3000.0f * cos(2.0f * PI * targetHz_fl32 * t_fl32);
 
         // 1. Richtung setzen ohne den Timer zu stoppen
         digitalWrite(DIR_PIN, vSoll_fl32 >= 0 ? HIGH : LOW); 
