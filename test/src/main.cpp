@@ -16,7 +16,8 @@ FastNonAccelStepper* _stepper;
 void setup()
 {
     Serial.begin(115200);
-    while(!Serial);
+    while(!Serial) { delay(10); } // Wait for USB Serial to connect
+    Serial.println("System Ready...");
     
     Serial.println("--- MCPWM Logic Analyzer Test Start ---");
     Serial.printf("Target Speed: %u Hz\n", TEST_SPEED_U32);
