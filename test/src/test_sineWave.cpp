@@ -22,6 +22,7 @@ void setup()
     _stepper->begin();
     _stepper->setMaxSpeed(250000);
     _stepper->setExpectedCycleTimeUs(1000);
+    _stepper->setCurrentPosition(0);
 
     delay(1000);
 }
@@ -31,7 +32,7 @@ void loop()
 {
     unsigned long currentMicros_u32 = micros();
 
-//#define VIA_PSOITIONING_COMMAND
+#define VIA_PSOITIONING_COMMAND
 #ifdef VIA_PSOITIONING_COMMAND
     if (currentMicros_u32 - previousMicros_u32 >= loopIntervalUs_u32) 
     {
@@ -39,12 +40,19 @@ void loop()
         float t_fl32 = currentMicros_u32 / 1000000.0f;
 
         float posSoll_fl32 = amplitude_fl32 * sin(2.0f * PI * targetHz_fl32 * t_fl32);
-        float vSoll_fl32 = amplitude_fl32 * (2.0f * PI * targetHz_fl32) * cos(2.0f * PI * targetHz_fl32 * t_fl32);
+        float vSoll_fl32 = 2.0f * amplitude_fl32 * (2.0f * PI * targetHz_fl32) * cos(2.0f * PI * targetHz_fl32 * t_fl32);
+
+        float positionDifference_fl32 = posSoll_fl32 - _stepper->getCurrentPosition();
+        float velocityToApply_fl32 = 1.1f * positionDifference_fl32 / loopIntervalUs_u32 * 1000000.0f; 
+
+        vSoll_fl32 = constrain(abs(velocityToApply_fl32), 10, MAX_SPEED_IN_HZ);
+
 
         //_stepper->moveTo((int32_t)posSoll_fl32, false);
         //_stepper->setSpeedLive((uint32_t)abs(vSoll_fl32));
 
         _stepper->moveToWithSpeed((int32_t)posSoll_fl32, (uint32_t)abs(vSoll_fl32));
+        //_stepper->moveToWithSpeed((int32_t)posSoll_fl32, 250000);
 
         // print when velocity crosses zero for better visibility on the analyzer
         if (vSoll_fl32 * speedWas_fl32 < 0.0f)
@@ -65,7 +73,7 @@ void loop()
         //float vSoll_fl32 = amplitude_fl32 * (2.0f * PI * targetHz_fl32) * cos(2.0f * PI * targetHz_fl32 * t_fl32);
 
 
-        float vSoll_fl32 = 250000.0f * cos(2.0f * PI * targetHz_fl32 * t_fl32);
+        float vSoll_fl32 = 2500.0f * cos(2.0f * PI * targetHz_fl32 * t_fl32);
 
         // 1. Richtung setzen ohne den Timer zu stoppen
         digitalWrite(DIR_PIN, vSoll_fl32 >= 0 ? HIGH : LOW); 

@@ -419,29 +419,8 @@ void IRAM_ATTR FastNonAccelStepper::setExpectedCycleTimeUs(uint32_t cycleTimeUs_
 
 void IRAM_ATTR FastNonAccelStepper::setSpeedLive(uint32_t speed_u32) 
 {
-
-    /*
-    // 1. Sicherheitsschranken: Geschwindigkeit auf gültigen Bereich begrenzen
-    // MCPWM Legacy kann theoretisch sehr tief gehen, aber unter 10Hz 
-    // wird der Timer-Interrupt für Stepper oft unpräzise.
-    uint32_t effectiveSpeed_u32 = speed_u32;
-    if (effectiveSpeed_u32 < 10) effectiveSpeed_u32 = 10; 
-    if (effectiveSpeed_u32 > MAX_SPEED_IN_HZ) effectiveSpeed_u32 = MAX_SPEED_IN_HZ;
-
-    // 2. Hardware-Update
-    // mcpwm_set_frequency aktualisiert den Prescaler und das Period-Register sofort.
-    // Wir nutzen MCPWM_UNIT_0 und MCPWM_TIMER_0 passend zu deiner initMCPWM().
-    mcpwm_set_frequency(MCPWM_UNIT_0, MCPWM_TIMER_0, effectiveSpeed_u32);
-
-    // 3. Duty Cycle sicherstellen
-    // Bei Frequenzänderungen muss der Duty Cycle oft neu gesetzt werden, 
-    // damit der Compare-Wert (Pulsbreite) proportional zur neuen Periode bleibt.
-    mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, PWM_DUTY_CYCLE);
-    mcpwm_set_duty_type(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, MCPWM_DUTY_MODE_0);
-*/
-
     // 1. Sicherheitsschranke (Hardwarelimit)
-    uint32_t effectiveSpeed_u32 = constrain(speed_u32, 10, MAX_SPEED_IN_HZ);
+    uint32_t effectiveSpeed_u32 = constrain(speed_u32, MINIMUM_PULSE_FREQUENCY_U32, MAX_SPEED_IN_HZ);
     
     // Nun stimmt die Relation: 10MHz / Frequenz = Perioden-Ticks
     uint32_t period = TIMER_RESOLUTION_IN_HZ_U32 / effectiveSpeed_u32;
@@ -456,46 +435,6 @@ void IRAM_ATTR FastNonAccelStepper::setSpeedLive(uint32_t speed_u32)
 
 void IRAM_ATTR FastNonAccelStepper::moveToWithSpeed(int32_t targetPos_i32, uint32_t speed_u32)
 {
-    /*int32_t currentPos_i32 = getCurrentPosition();
-    int32_t stepsToMove_i32 = targetPos_i32 - currentPos_i32;
-    int32_t absStepsToMove_i32 = abs(stepsToMove_i32);
-
-    if (absStepsToMove_i32 > POSITION_TRIGGER_THRESHOLD)
-    {
-        // 1. Berechnung der Bursts (wie in der move-Funktion)
-        int32_t numbWraps_i32 = absStepsToMove_i32 / PCNT_MIN_MAX_THRESHOLD;
-        int32_t limit_i32 = absStepsToMove_i32 / (numbWraps_i32 + 1);
-        int16_t limit_i16 = (int16_t)constrain(limit_i32, 0, PCNT_MIN_MAX_THRESHOLD);
-
-        // 2. Richtung setzen
-        bool forward = (stepsToMove_i32 > 0);
-        digitalWrite(dirPin_u8, forward ? dirLevelForward_b : dirLevelBackward_b);
-
-        // 3. PCNT Control Unit (UNIT 1) fliegend konfigurieren
-        // Wir setzen die Limits neu, ohne den Counter zu löschen, 
-        // sofern die Richtung gleich bleibt.
-        if (forward) {
-            pcnt_set_event_value(PCNT_UNIT_1, PCNT_EVT_H_LIM, limit_i16);
-            pcnt_set_event_value(PCNT_UNIT_1, PCNT_EVT_L_LIM, -MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP);
-        } else {
-            pcnt_set_event_value(PCNT_UNIT_1, PCNT_EVT_H_LIM, MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP);
-            pcnt_set_event_value(PCNT_UNIT_1, PCNT_EVT_L_LIM, -limit_i16);
-        }
-        
-        overflowCountControl_i32 = numbWraps_i32;
-
-        // 4. Geschwindigkeit ohne forceStop() anpassen
-        setSpeedLive(speed_u32);
-
-        // 5. Motor starten falls nötig
-        if (!isRunning_b) {
-            isRunning_b = true;
-            mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);
-        }
-    }
-    targetPosition_i32 = targetPos_i32;*/
-
-
     int32_t currentPos_i32 = getCurrentPosition();
     int32_t stepsToMove_i32 = targetPos_i32 - currentPos_i32;
     
@@ -503,19 +442,55 @@ void IRAM_ATTR FastNonAccelStepper::moveToWithSpeed(int32_t targetPos_i32, uint3
     bool forward = (stepsToMove_i32 >= 0);
     uint8_t targetDirLevel = forward ? dirLevelForward_b : dirLevelBackward_b;
 
-    // CRITICAL: Nur wenn die Richtung umschlägt, müssen wir den PCNT kurz anfassen
-    if (digitalRead(dirPin_u8) != targetDirLevel) {
-        digitalWrite(dirPin_u8, targetDirLevel);
-        // Control Unit 1 kurz resetten für neue Richtung
-        pcnt_counter_pause(PCNT_UNIT_1);
-        pcnt_counter_clear(PCNT_UNIT_1);
-        pcnt_counter_resume(PCNT_UNIT_1);
+    int32_t absStepsToMove_i32 = abs(stepsToMove_i32);
+
+    // compute the number of wraps
+    int32_t numbWraps_i32 = absStepsToMove_i32 / PCNT_MIN_MAX_THRESHOLD;
+
+    // divide into equally spaced bursts, e.g. when 
+    // if absStepsToMove is < PCNT_MIN_MAX_THRESHOLD --> numbWraps = 0 and limit_i16 = absStepsToMove
+    // if absStepsToMove == PCNT_MIN_MAX_THRESHOLD --> numbWraps = 1 and limit_i16 = absStepsToMove/2
+    // if absStepsToMove == 2*PCNT_MIN_MAX_THRESHOLD --> numbWraps = 2 and limit_i16 = absStepsToMove/3
+    // if absStepsToMove > PCNT_MIN_MAX_THRESHOLD --> numbWraps >= 1
+    int32_t limit_i32 = absStepsToMove_i32 / (numbWraps_i32 + 1);
+    int16_t limit_i16 = constrain(limit_i32, 0, PCNT_MIN_MAX_THRESHOLD);
+
+    // the highLimit | lowLimit will be hit numbWraps, before stopping the PWM output
+    int16_t highLimit_i16;
+    int16_t lowLimit_i16;
+
+    // 1) set DIR pin
+    // 2) define upper limit for control pcnt
+    // 3) define lower limit for control pcnt
+    if (stepsToMove_i32 > 0)
+    {
+        digitalWrite(dirPin_u8, dirLevelForward_b);
+        highLimit_i16 = limit_i16;
+        lowLimit_i16 = -MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP;
+        overflowCountControl_i32 = numbWraps_i32;
     }
+    else
+    {
+        digitalWrite(dirPin_u8, dirLevelBackward_b);
+        highLimit_i16 = MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP;
+        lowLimit_i16 = -limit_i16;
+        overflowCountControl_i32 = numbWraps_i32;
+    }
+
+    // parameterize control pcnt
+    pcnt_counter_pause(PCNT_UNIT_1);
+    pcnt_counter_clear(PCNT_UNIT_1);
+    pcnt_set_event_value(PCNT_UNIT_1, PCNT_EVT_H_LIM, highLimit_i16);
+    pcnt_set_event_value(PCNT_UNIT_1, PCNT_EVT_L_LIM, lowLimit_i16);
+    pcnt_event_enable(PCNT_UNIT_1, PCNT_EVT_H_LIM);
+    pcnt_event_enable(PCNT_UNIT_1, PCNT_EVT_L_LIM);
+    pcnt_counter_clear(PCNT_UNIT_1);
+    pcnt_counter_resume(PCNT_UNIT_1);
 
     // Setze das Hardware-Limit für UNIT 1 als Sicherheitsfangnetz
     // Wir setzen es immer ein Stück weiter als das aktuelle Ziel
-    int16_t safetyLimit = (int16_t)constrain(abs(stepsToMove_i32) + 100, 0, PCNT_MIN_MAX_THRESHOLD);
-    pcnt_set_event_value(PCNT_UNIT_1, forward ? PCNT_EVT_H_LIM : PCNT_EVT_L_LIM, safetyLimit);
+    //int16_t safetyLimit = (int16_t)constrain(abs(stepsToMove_i32) + 100, 0, PCNT_MIN_MAX_THRESHOLD);
+    //pcnt_set_event_value(PCNT_UNIT_1, forward ? PCNT_EVT_H_LIM : PCNT_EVT_L_LIM, safetyLimit);
 
     // Geschwindigkeit ohne Ruckler anpassen
     setSpeedLive(speed_u32);
