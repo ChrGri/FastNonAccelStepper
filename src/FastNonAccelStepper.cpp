@@ -16,7 +16,11 @@
 #define PCNT_FILTER_VALUE 1
 #define MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP 50
 
-#define TIMER_RESOLUTION_IN_HZ_U32 10000000
+//#define TIMER_RESOLUTION_IN_HZ_U32 10000000
+#define TIMER_RESOLUTION_IN_HZ_U32 160000000
+#define MCPWM_CLK_HIGH 160000000 // 160 MHz für hohe Präzision
+#define MCPWM_CLK_LOW    1000000 // 1 MHz für langsame Frequenzen
+#define SWITCH_THRESHOLD 2500    // Wechsel bei ca. 2,5 kHz
 #define MINIMUM_PULSE_FREQUENCY_U32 (uint32_t)(TIMER_RESOLUTION_IN_HZ_U32 / UINT16_MAX + 1u)
 
 
@@ -231,7 +235,7 @@ int32_t IRAM_ATTR FastNonAccelStepper::getCurrentPosition() const
 void FastNonAccelStepper::initMCPWM()
 {
     // Wir setzen den Takt explizit auf 10MHz (160MHz / (15+1))
-    mcpwm_group_set_resolution(MCPWM_UNIT_0, TIMER_RESOLUTION_IN_HZ_U32); 
+    //mcpwm_group_set_resolution(MCPWM_UNIT_0, TIMER_RESOLUTION_IN_HZ_U32); 
     
     mcpwm_config_t pwmConfig;
     pwmConfig.frequency = maxSpeed_u32;
@@ -240,6 +244,10 @@ void FastNonAccelStepper::initMCPWM()
     pwmConfig.duty_mode = MCPWM_DUTY_MODE_0;
 
     mcpwm_init(MCPWM_UNIT_0, MCPWM_TIMER_0, &pwmConfig);
+
+    // WICHTIG: Den Timer-internen Prescaler auf 0 zwingen, damit wir 
+    // mit dem vollen Takt (160MHz) arbeiten können.
+    MCPWM0.timer[0].timer_cfg0.timer_prescale = 0;
 }
 
 void FastNonAccelStepper::initPCNTMultiturn()
@@ -423,32 +431,43 @@ void IRAM_ATTR FastNonAccelStepper::setExpectedCycleTimeUs(uint32_t cycleTimeUs_
 
 void IRAM_ATTR FastNonAccelStepper::setSpeedLive(uint32_t speed_u32) 
 {
-    // 1. Sicherheitsschranke (Hardwarelimit)
-    uint32_t effectiveSpeed_u32 = constrain(speed_u32, MINIMUM_PULSE_FREQUENCY_U32, MAX_SPEED_IN_HZ);
-    
-    if (speed_u32 < MINIMUM_PULSE_FREQUENCY_U32) 
+    uint32_t period;
+    uint32_t used_clk;
+
+    // 1. Dynamische Taktwahl
+    if (speed_u32 < SWITCH_THRESHOLD) 
     {
-        // Geschwindigkeit zu gering: Ausgang hart auf LOW zwingen
-        // gen_a_cntuforce_mode: 0=disabled, 1=low, 2=high
-        MCPWM0.operators[0].gen_force.gen_a_cntuforce_mode = 1; 
-        
-        // Wir setzen isRunning_b nicht auf false, damit der Stream 
-        // im Loop aktiv bleibt, aber es kommen keine physikalischen Pulse raus.
-        return; 
+        used_clk = MCPWM_CLK_LOW;
+        MCPWM0.clk_cfg.clk_prescale = 159; // 160MHz / 160 = 1MHz
+    } 
+    else 
+    {
+        used_clk = MCPWM_CLK_HIGH;
+        MCPWM0.clk_cfg.clk_prescale = 0;   // 160MHz ungebremst
     }
 
-    // Falls der Ausgang zuvor blockiert war: Force aufheben (0 = disabled)
-    MCPWM0.operators[0].gen_force.gen_a_cntuforce_mode = 0;
+    // 2. Periodenberechnung
+    uint32_t effectiveSpeed = (speed_u32 < 1) ? 1 : speed_u32; 
+    period = used_clk / effectiveSpeed;
 
-    // Nun stimmt die Relation: 10MHz / Frequenz = Perioden-Ticks
-    uint32_t period = TIMER_RESOLUTION_IN_HZ_U32 / effectiveSpeed_u32;
+    // Hardware-Korrektur: Periode - 1 für exakte Frequenz
+    if (period > 0) period--; 
 
-    // Register-Update (wie gehabt)
+    // 3. Register-Update via Shadow-Register (Update bei TEZ)
     MCPWM0.timer[0].timer_cfg0.timer_period = (uint32_t)(period & 0xFFFF);
     MCPWM0.timer[0].timer_cfg0.timer_period_upmethod = 1; 
 
-    MCPWM0.operators[0].timestamp[0].gen = (uint32_t)((period / 2) & 0xFFFF);
-    MCPWM0.operators[0].gen_stmp_cfg.gen_a_upmethod = 1; 
+    // Duty Cycle 50%
+    uint32_t compare = (period + 1) / 2;
+    MCPWM0.operators[0].timestamp[0].gen = (uint32_t)(compare & 0xFFFF);
+    MCPWM0.operators[0].gen_stmp_cfg.gen_a_upmethod = 1;
+
+    // 4. Stopp-Logik: Force LOW bei Stillstand
+    if (speed_u32 < 10) {
+        MCPWM0.operators[0].gen_force.gen_a_cntuforce_mode = 1; 
+    } else {
+        MCPWM0.operators[0].gen_force.gen_a_cntuforce_mode = 0; 
+    }
 }
 
 void IRAM_ATTR FastNonAccelStepper::moveToWithSpeed(int32_t targetPos_i32, uint32_t speed_u32)

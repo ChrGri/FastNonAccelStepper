@@ -9,7 +9,7 @@ FastNonAccelStepper* _stepper;
 
 // Constants for the test
 #define MAXIMUM_STEPPER_SPEED_U32 (uint32_t)250000
-#define TEST_SPEED_U32 (uint32_t)(MAXIMUM_STEPPER_SPEED_U32 / 16) 
+#define TEST_SPEED_U32 (uint32_t)(MAXIMUM_STEPPER_SPEED_U32 / 1) 
 
 void setup() 
 {

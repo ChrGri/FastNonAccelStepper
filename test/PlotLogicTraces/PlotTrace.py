@@ -58,7 +58,7 @@ def calculate_frequency(times, initial_state):
     
     # 2. Physikalisch unmögliche Werte filtern (z.B. > 300kHz)
     # Da dein MCPWM Limit bei 250kHz liegt, ist alles darüber ein Messfehler
-    valid_mask = frequencies < 50000 
+    valid_mask = frequencies < 260000 
     
     return freq_time[valid_mask], frequencies[valid_mask]
 
