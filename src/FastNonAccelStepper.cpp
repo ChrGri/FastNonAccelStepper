@@ -431,66 +431,75 @@ void IRAM_ATTR FastNonAccelStepper::setExpectedCycleTimeUs(uint32_t cycleTimeUs_
 
 void IRAM_ATTR FastNonAccelStepper::setSpeedLive(uint32_t speed_u32) 
 {
-    // Statische Variablen, um den Zustand über Funktionsaufrufe hinweg zu speichern
     static uint32_t last_used_clk = 0; 
     uint32_t used_clk;
     uint32_t target_prescaler;
 
-    // 1. Dynamische Taktwahl mit Hysterese
-    // Wir wechseln erst bei 2600 Hz nach oben und bei 2400 Hz nach unten,
-    // um "Flattern" am Schaltpunkt zu vermeiden.
+    // 1. Hardware-Vorbereitung
+    MCPWM0.update_cfg.global_up_en = 1;
+    MCPWM0.update_cfg.op0_up_en = 1;
+
+    maxSpeed_u32 = speed_u32;
+
+    // 2. Taktwahl (Hysterese)
     if (speed_u32 < (SWITCH_THRESHOLD - 100)) 
     {
-        used_clk = MCPWM_CLK_LOW;
-        target_prescaler = 159; // 160MHz / 160 = 1MHz
+        used_clk = MCPWM_CLK_LOW;  
+        target_prescaler = 159; 
     } 
     else if (speed_u32 > (SWITCH_THRESHOLD + 100))
     {
-        used_clk = MCPWM_CLK_HIGH;
-        target_prescaler = 0;   // 160MHz ungebremst
+        used_clk = MCPWM_CLK_HIGH; 
+        target_prescaler = 0;  
     }
     else
     {
-        // Im Bereich zwischen 2400 und 2600 Hz behalten wir den alten Takt bei
         used_clk = (last_used_clk == 0) ? MCPWM_CLK_HIGH : last_used_clk;
-        target_prescaler = (used_clk == MCPWM_CLK_HIGH) ? 0 : 159;
+        target_prescaler = (used_clk == MCPWM_CLK_HIGH) ? 0 : 15;
     }
 
-    // 2. Takt-Hardware nur bei Änderung aktualisieren
+    // 3. Takt-Update
     if (used_clk != last_used_clk) 
     {
         MCPWM0.clk_cfg.clk_prescale = target_prescaler;
         last_used_clk = used_clk;
-        
-        // Synchronisation erzwingen: Übernimmt clk_prescale und period zeitgleich
         MCPWM0.update_cfg.global_force_up = 1;
         MCPWM0.update_cfg.global_force_up = 0;
     }
 
-    // 3. Periodenberechnung
-    uint32_t effectiveSpeed = (speed_u32 < 10) ? 10 : speed_u32; 
-    uint32_t period = used_clk / effectiveSpeed;    
+    // 4. Reanimation falls gestoppt
+    if (MCPWM0.timer[0].timer_cfg1.timer_start == 0 && speed_u32 >= 153) 
+    {
+        MCPWM0.timer[0].timer_cfg1.timer_start = 2; 
+        isRunning_b = true;
+    }
 
-    maxSpeed_u32 = speed_u32;
-
-    // Hardware-Korrektur: Die Periode im Register ist N-1 Ticks
+    // 5. Berechnung
+    uint32_t effectiveSpeed = (speed_u32 < 153) ? 153 : speed_u32;
+    uint32_t period = used_clk / effectiveSpeed;
     if (period > 0) period--; 
 
-    // 4. Register-Update via Shadow-Register (Update bei TEZ)
+    // --- KORRIGIERTE ZEILEN GEMÄSS DEINER MCPWM_STRUCT.H ---
+    MCPWM0.timer[0].timer_cfg0.timer_period_upmethod = 0; // Immediate
     MCPWM0.timer[0].timer_cfg0.timer_period = (uint32_t)(period & 0xFFFF);
-    MCPWM0.timer[0].timer_cfg0.timer_period_upmethod = 1; 
+    // -------------------------------------------------------
 
-    // Duty Cycle exakt 50%
     uint32_t compare = (period + 1) / 2;
+    MCPWM0.operators[0].gen_stmp_cfg.gen_a_upmethod = 0; 
     MCPWM0.operators[0].timestamp[0].gen = (uint32_t)(compare & 0xFFFF);
-    MCPWM0.operators[0].gen_stmp_cfg.gen_a_upmethod = 1;
 
-    // 5. Stopp-Logik: Force LOW bei sehr geringen Geschwindigkeiten
-    if (speed_u32 < 10) {
-        MCPWM0.operators[0].gen_force.gen_a_cntuforce_mode = 1; // Force LOW
-    } else {
-        MCPWM0.operators[0].gen_force.gen_a_cntuforce_mode = 0; // PWM aktiv
+    // 6. Force-Stopp Logik
+    if (speed_u32 < 150) 
+    {
+        MCPWM0.operators[0].gen_force.gen_a_cntuforce_mode = 1; 
+    } 
+    else 
+    {
+        MCPWM0.operators[0].gen_force.gen_a_cntuforce_mode = 0; 
     }
+
+    MCPWM0.update_cfg.global_force_up = 1;
+    MCPWM0.update_cfg.global_force_up = 0;
 }
 
 void IRAM_ATTR FastNonAccelStepper::moveToWithSpeed(int32_t targetPos_i32, uint32_t speed_u32)
