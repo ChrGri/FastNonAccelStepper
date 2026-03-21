@@ -20,6 +20,8 @@
 #define TIMER_RESOLUTION_IN_HZ_U32 160000000
 #define MCPWM_CLK_HIGH 160000000 // 160 MHz für hohe Präzision
 #define MCPWM_CLK_LOW    1000000 // 1 MHz für langsame Frequenzen
+#define MPCWM_PRESCALER_HIGH 0   // Kein Prescaler, volle 160 MHz
+#define MPCWM_PRESCALER_LOW  159
 #define SWITCH_THRESHOLD 2500    // Wechsel bei ca. 2,5 kHz
 #define MINIMUM_PULSE_FREQUENCY_U32 (uint32_t)(TIMER_RESOLUTION_IN_HZ_U32 / UINT16_MAX + 1u)
 
@@ -435,30 +437,31 @@ void IRAM_ATTR FastNonAccelStepper::setSpeedLive(uint32_t speed_u32)
     uint32_t used_clk;
     uint32_t target_prescaler;
 
-    // 1. Hardware-Vorbereitung
+    // 1. hardware preparation for speed change: update the timer settings with the new speed, before changing the clock source or prescaler
     MCPWM0.update_cfg.global_up_en = 1;
     MCPWM0.update_cfg.op0_up_en = 1;
 
+    // write to variable that tracks the max speed (for later retrieval and for use in moveToWithSpeed)
     maxSpeed_u32 = speed_u32;
 
-    // 2. Taktwahl (Hysterese)
+    // 2. clock selection (hysteresis implemented to prevent frequent switching around the threshold)
     if (speed_u32 < (SWITCH_THRESHOLD - 100)) 
     {
         used_clk = MCPWM_CLK_LOW;  
-        target_prescaler = 159; 
+        target_prescaler = MPCWM_PRESCALER_LOW; 
     } 
     else if (speed_u32 > (SWITCH_THRESHOLD + 100))
     {
         used_clk = MCPWM_CLK_HIGH; 
-        target_prescaler = 0;  
+        target_prescaler = MPCWM_PRESCALER_HIGH;  
     }
     else
     {
         used_clk = (last_used_clk == 0) ? MCPWM_CLK_HIGH : last_used_clk;
-        target_prescaler = (used_clk == MCPWM_CLK_HIGH) ? 0 : 15;
+        target_prescaler = (used_clk == MCPWM_CLK_HIGH) ? MPCWM_PRESCALER_HIGH : MPCWM_PRESCALER_LOW;
     }
 
-    // 3. Takt-Update
+    // 3. clock update with immediate effect, if there is a change in the clock source or prescaler
     if (used_clk != last_used_clk) 
     {
         MCPWM0.clk_cfg.clk_prescale = target_prescaler;
@@ -467,29 +470,28 @@ void IRAM_ATTR FastNonAccelStepper::setSpeedLive(uint32_t speed_u32)
         MCPWM0.update_cfg.global_force_up = 0;
     }
 
-    // 4. Reanimation falls gestoppt
-    if (MCPWM0.timer[0].timer_cfg1.timer_start == 0 && speed_u32 >= 153) 
+    // 4. reanimation if stopped due to low speed
+    if (MCPWM0.timer[0].timer_cfg1.timer_start == 0 && speed_u32 >= MINIMUM_PULSE_FREQUENCY_U32) 
     {
         MCPWM0.timer[0].timer_cfg1.timer_start = 2; 
         isRunning_b = true;
     }
 
-    // 5. Berechnung
-    uint32_t effectiveSpeed = (speed_u32 < 153) ? 153 : speed_u32;
+    // 5. Calculate the timer period for the new speed and update the MCPWM registers
+    uint32_t effectiveSpeed = (speed_u32 < MINIMUM_PULSE_FREQUENCY_U32) ? MINIMUM_PULSE_FREQUENCY_U32 : speed_u32;
     uint32_t period = used_clk / effectiveSpeed;
     if (period > 0) period--; 
 
-    // --- KORRIGIERTE ZEILEN GEMÄSS DEINER MCPWM_STRUCT.H ---
+    // direct register manipulation for immediate update of the timer period without waiting for the end of the current PWM cycle
     MCPWM0.timer[0].timer_cfg0.timer_period_upmethod = 0; // Immediate
     MCPWM0.timer[0].timer_cfg0.timer_period = (uint32_t)(period & 0xFFFF);
-    // -------------------------------------------------------
 
     uint32_t compare = (period + 1) / 2;
     MCPWM0.operators[0].gen_stmp_cfg.gen_a_upmethod = 0; 
     MCPWM0.operators[0].timestamp[0].gen = (uint32_t)(compare & 0xFFFF);
 
-    // 6. Force-Stopp Logik
-    if (speed_u32 < 150) 
+    // 6. force stop logic for very low speeds to prevent stalling, with automatic reanimation when speed is increased again
+    if (speed_u32 < MINIMUM_PULSE_FREQUENCY_U32) 
     {
         MCPWM0.operators[0].gen_force.gen_a_cntuforce_mode = 1; 
     } 
