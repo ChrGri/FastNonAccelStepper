@@ -29,7 +29,7 @@ public:
      * @brief Get the maximum speed of the stepper motor.
      * @return Maximum speed in Hz.
      */
-    uint32_t getMaxSpeed(void);
+    int32_t getMaxSpeed(void);
 
     /**
      * @brief Update the target position for the stepper motor.

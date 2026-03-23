@@ -90,10 +90,20 @@ void IRAM_ATTR FastNonAccelStepper::setMaxSpeed(uint32_t speed_u32)
     setSpeedLive(speed_u32);
 }
 
-uint32_t IRAM_ATTR FastNonAccelStepper::getMaxSpeed(void)
+int32_t IRAM_ATTR FastNonAccelStepper::getMaxSpeed(void)
 {
-    // Constrain the speed to valid limits
-    return maxSpeed_u32;
+    // 1. Read direction pin to determine the current direction of movement, which indicates whether the speed is positive (forward) or negative (backward)
+    bool currentDir = digitalRead(dirPin_u8);
+    
+    // 2. Check if this state corresponds to your defined forward direction
+    if (currentDir == dirLevelForward_b)
+    {
+        return (int32_t)maxSpeed_u32;
+    }
+    else
+    {
+        return -(int32_t)maxSpeed_u32;
+    }
 }
 
 
