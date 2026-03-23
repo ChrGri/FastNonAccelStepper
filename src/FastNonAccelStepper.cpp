@@ -83,23 +83,11 @@ void FastNonAccelStepper::begin(int timerGroup_i32)
 
 void IRAM_ATTR FastNonAccelStepper::setMaxSpeed(uint32_t speed_u32)
 {
-
-    setSpeedLive(speed_u32);
-
-    /* // Constrain the speed to valid limits
+    // Constrain the speed to valid limits
     maxSpeed_u32 = constrain(speed_u32, 1, MAX_SPEED_IN_HZ);
 
-    // Update the MCPWM timer with the new frequency
-    if (maxSpeed_u32 > 0)
-    {
-        mcpwm_set_frequency(MCPWM_UNIT_0, MCPWM_TIMER_0, maxSpeed_u32);
-        forceStop();
-    }
-    else
-    {
-        forceStop();
-    }
-        */
+    // update the speed live if the motor is currently running
+    setSpeedLive(speed_u32);
 }
 
 uint32_t IRAM_ATTR FastNonAccelStepper::getMaxSpeed(void)
