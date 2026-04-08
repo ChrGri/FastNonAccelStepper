@@ -1,28 +1,51 @@
 #include <Arduino.h>
-#include <FastNonAccelStepper.h>
+#include "FastNonAccelStepper.h"
 
-// Define your stepper motor connections and settings
-#define STEP_PIN 2
-#define DIR_PIN 3
-#define INVERT_DIR false
+// Pins matching your setup
+#define STEP_PIN 18
+#define DIR_PIN 19
 
-// Create a new stepper instance
-FastNonAccelStepper stepper = FastNonAccelStepper(STEP_PIN, DIR_PIN, INVERT_DIR);
+//FastNonAccelStepper stepper(STEP_PIN, DIR_PIN, false);
 
-void setup() 
+FastNonAccelStepper* _stepper;
+
+// Extracted from your provided constants
+#define MAX_SPEED_IN_HZ_U32 (uint32_t)250000
+#define TEST_SPEED_U32 (MAX_SPEED_IN_HZ_U32 / 16) // 15625 Hz
+
+void setup()
 {
-  // Set a default speed
-  stepper.setMaxSpeed(1000); // in Hz
+    Serial.begin(115200);
+    while(!Serial) { delay(10); } // Wait for USB Serial to connect
+    Serial.println("System Ready...");
+    
+    Serial.println("--- MCPWM Logic Analyzer Test Start ---");
+    Serial.printf("Target Speed: %u Hz\n", TEST_SPEED_U32);
+
+    // Initializing hardware
+    _stepper = new FastNonAccelStepper(STEP_PIN, DIR_PIN, false); 
+    _stepper->begin();
+    _stepper->setMaxSpeed(TEST_SPEED_U32);
+    _stepper->setExpectedCycleTimeUs(1000);
+
+    // Give the hardware and serial time to settle
+    delay(2000);
 }
 
-void loop() 
+void loop()
 {
-  // Example usage:
-  // Move 2000 steps forward and wait
-  stepper.move(2000, true);
-  delay(1000);
+    Serial.println("Executing: keepRunningBackward...");
 
-  // Move 2000 steps backward and wait
-  stepper.move(-2000, true);
-  delay(1000);
+    // This mimics your StepperWithLimits.cpp line:
+    // _stepper->keepRunningBackward(MAXIMUM_STEPPER_SPEED_U32 / 16);
+    _stepper->keepRunningBackward(TEST_SPEED_U32);
+
+    // Run for 2 seconds so you can see it on the analyzer
+    delay(2000);
+
+    Serial.println("Executing: forceStop...");
+    _stepper->forceStop();
+
+    // Wait 3 seconds before next burst
+    delay(3000);
 }

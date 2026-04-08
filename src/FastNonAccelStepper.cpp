@@ -2,7 +2,8 @@
 #include <driver/mcpwm.h>
 #include <driver/pcnt.h>
 
-
+#include "soc/mcpwm_struct.h"
+#include "soc/mcpwm_reg.h"
 
 
 /************************************************************************/
@@ -12,8 +13,24 @@
 #define PWM_DUTY_CYCLE 50.0f
 #define PCNT_MIN_MAX_THRESHOLD (int16_t)32767 // INT16_MAX = (2^15)-1 = 32767
 #define POSITION_TRIGGER_THRESHOLD 1
-#define PCNT_FILTER_VALUE 1
 #define MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP 50
+
+//#define TIMER_RESOLUTION_IN_HZ_U32 10000000
+#define TIMER_RESOLUTION_IN_HZ_U32 160000000
+#define MCPWM_CLK_HIGH 160000000 // 160 MHz für hohe Präzision
+#define MCPWM_CLK_LOW    1000000 // 1 MHz für langsame Frequenzen
+#define MPCWM_PRESCALER_HIGH 0   // Kein Prescaler, volle 160 MHz
+#define MPCWM_PRESCALER_LOW  159
+#define SWITCH_THRESHOLD 2500    // Wechsel bei ca. 2,5 kHz
+#define MINIMUM_PULSE_FREQUENCY_U32 (uint32_t)(TIMER_RESOLUTION_IN_HZ_U32 / UINT16_MAX + 1u)
+
+
+// Defines the margin (in Hz) that the filter should be set above the maximum speed
+#define PCNT_FILTER_MARGIN_HZ 5000
+
+// Dynamic calculation of the filter value (80MHz APB clock / 2 for 50% duty cycle)
+// The integer division automatically rounds down, which slightly increases the margin on the hardware side.
+#define PCNT_FILTER_VALUE (40000000 / (MAX_SPEED_IN_HZ + PCNT_FILTER_MARGIN_HZ))
 
 
 /************************************************************************/
@@ -22,16 +39,16 @@
 FastNonAccelStepper::FastNonAccelStepper(uint8_t stepPin_u8, uint8_t dirPin_u8, bool invertMotorDir_b)
   : stepPin_u8(stepPin_u8), dirPin_u8(dirPin_u8), targetPosition_i32(0), maxSpeed_u32(MAX_SPEED_IN_HZ), overflowCount_i32(0), pcntQueue(nullptr), invertMotorDirection_b(invertMotorDir_b), zeroPosition_i32(0){
 {
-    stepper_p = this;  // Assign the current instance to stepper_p
-    stepper_p->begin(stepPin_u8, dirPin_u8, invertMotorDirection_b);
+    //stepper_p = this;  // Assign the current instance to stepper_p
+    //stepper_p->begin(stepPin_u8, dirPin_u8, invertMotorDirection_b);
 }
 
-void FastNonAccelStepper::begin(uint8_t stepPin_u8, uint8_t dirPin_u8, bool invertMotorDir_b)
+void FastNonAccelStepper::begin(int timerGroup_i32)
 {
     // set dir logic for counting
     // 1) If invertMotorDir_b == false, the DIR_PIN == HIGH, when motor moving forward and DIR_PIN == LOW, when motor moving backwards
     // 2) If invertMotorDir_b == false, the PCNT counter should go up, when DIR_PIN == HIGH
-    if (false == invertMotorDir_b)
+    if (false == invertMotorDirection_b)
     {
         dirLevelForward_b = LOW;
         dirLevelBackward_b = HIGH;
@@ -76,29 +93,31 @@ void IRAM_ATTR FastNonAccelStepper::setMaxSpeed(uint32_t speed_u32)
     // Constrain the speed to valid limits
     maxSpeed_u32 = constrain(speed_u32, 1, MAX_SPEED_IN_HZ);
 
-    // Update the MCPWM timer with the new frequency
-    if (maxSpeed_u32 > 0)
+    // update the speed live if the motor is currently running
+    setSpeedLive(speed_u32);
+}
+
+int32_t IRAM_ATTR FastNonAccelStepper::getMaxSpeed(void)
+{
+    // 1. Read direction pin to determine the current direction of movement, which indicates whether the speed is positive (forward) or negative (backward)
+    bool currentDir = digitalRead(dirPin_u8);
+    
+    // 2. Check if this state corresponds to your defined forward direction
+    if (currentDir == dirLevelForward_b)
     {
-        mcpwm_set_frequency(MCPWM_UNIT_0, MCPWM_TIMER_0, maxSpeed_u32);
-        forceStop();
+        return (int32_t)maxSpeed_u32;
     }
     else
     {
-        forceStop();
+        return -(int32_t)maxSpeed_u32;
     }
-}
-
-uint32_t IRAM_ATTR FastNonAccelStepper::getMaxSpeed(void)
-{
-    // Constrain the speed to valid limits
-    return maxSpeed_u32;
 }
 
 
 void IRAM_ATTR FastNonAccelStepper::move(int32_t stepsToMove_i32, bool blocking_b)
 {
     // stop previous move
-    forceStop();
+    //forceStop();
 
     int32_t absStepsToMove_i32 = abs(stepsToMove_i32);
 
@@ -174,13 +193,30 @@ void IRAM_ATTR FastNonAccelStepper::move(int32_t stepsToMove_i32, bool blocking_
 
         if (blocking_b)
         {
-            while(isRunning())
-            {
+            uint32_t start = millis();
+            while(isRunning_b) { 
                 delay(1);
-          /*int16_t pulseCountlcl = 0;
-          pcnt_get_counter_value(PCNT_UNIT_1, &pulseCountlcl);
-          Serial.printf( "CurPos: %d,    CtrlPos:%d,    overfl: %d\n", getCurrentPosition(), pulseCountlcl, _overflowCountControl);
-          delay(30);*/
+
+                if(millis() - start > 15000) { forceStop(); break; }
+
+                static uint32_t lastPrint = 0;
+                if (millis() - lastPrint >= 500) {
+                    lastPrint = millis();
+                    
+                    // Hardware-Register direkt auslesen
+                    int16_t rawUnit0 = 0;
+                    int16_t rawUnit1 = 0;
+                    pcnt_get_counter_value(PCNT_UNIT_0, &rawUnit0);
+                    pcnt_get_counter_value(PCNT_UNIT_1, &rawUnit1);
+
+                    Serial.printf("POS: %d | TRGT: %d | U0_raw: %d (Ovr: %d) | U1_raw: %d (Wraps: %d)\n", 
+                                  getCurrentPosition(), 
+                                  targetPosition_i32, 
+                                  rawUnit0, 
+                                  overflowCount_i32, 
+                                  rawUnit1, 
+                                  overflowCountControl_i32);
+                }
             }
         }
     }
@@ -205,14 +241,20 @@ int32_t IRAM_ATTR FastNonAccelStepper::getCurrentPosition() const
 
 void FastNonAccelStepper::initMCPWM()
 {
+    // Wir setzen den Takt explizit auf 10MHz (160MHz / (15+1))
+    //mcpwm_group_set_resolution(MCPWM_UNIT_0, TIMER_RESOLUTION_IN_HZ_U32); 
+    
     mcpwm_config_t pwmConfig;
     pwmConfig.frequency = maxSpeed_u32;
     pwmConfig.cmpr_a = PWM_DUTY_CYCLE;
-    pwmConfig.cmpr_b = 0.0f;
     pwmConfig.counter_mode = MCPWM_UP_COUNTER;
     pwmConfig.duty_mode = MCPWM_DUTY_MODE_0;
 
     mcpwm_init(MCPWM_UNIT_0, MCPWM_TIMER_0, &pwmConfig);
+
+    // WICHTIG: Den Timer-internen Prescaler auf 0 zwingen, damit wir 
+    // mit dem vollen Takt (160MHz) arbeiten können.
+    MCPWM0.timer[0].timer_cfg0.timer_prescale = 0;
 }
 
 void FastNonAccelStepper::initPCNTMultiturn()
@@ -387,4 +429,153 @@ void IRAM_ATTR FastNonAccelStepper::keepRunningBackward(uint32_t speed_u32)
 int32_t IRAM_ATTR FastNonAccelStepper::getPositionAfterCommandsCompleted()
 {
   return targetPosition_i32;
+}
+
+void IRAM_ATTR FastNonAccelStepper::setExpectedCycleTimeUs(uint32_t cycleTimeUs_u32) 
+{
+    expectedCycleTimeUs_u32 = cycleTimeUs_u32;
+}
+
+void IRAM_ATTR FastNonAccelStepper::setSpeedLive(uint32_t speed_u32) 
+{
+    static uint32_t last_used_clk = 0; 
+    uint32_t used_clk;
+    uint32_t target_prescaler;
+
+    // 1. hardware preparation for speed change: update the timer settings with the new speed, before changing the clock source or prescaler
+    MCPWM0.update_cfg.global_up_en = 1;
+    MCPWM0.update_cfg.op0_up_en = 1;
+
+	// constrain to allowed intervall
+	speed_u32 = constrain(speed_u32, 1, MAX_SPEED_IN_HZ);
+	
+    // write to variable that tracks the max speed (for later retrieval and for use in moveToWithSpeed)
+    maxSpeed_u32 = speed_u32;
+
+    // 2. clock selection (hysteresis implemented to prevent frequent switching around the threshold)
+    if (speed_u32 < (SWITCH_THRESHOLD - 100)) 
+    {
+        used_clk = MCPWM_CLK_LOW;  
+        target_prescaler = MPCWM_PRESCALER_LOW; 
+    } 
+    else if (speed_u32 > (SWITCH_THRESHOLD + 100))
+    {
+        used_clk = MCPWM_CLK_HIGH; 
+        target_prescaler = MPCWM_PRESCALER_HIGH;  
+    }
+    else
+    {
+        used_clk = (last_used_clk == 0) ? MCPWM_CLK_HIGH : last_used_clk;
+        target_prescaler = (used_clk == MCPWM_CLK_HIGH) ? MPCWM_PRESCALER_HIGH : MPCWM_PRESCALER_LOW;
+    }
+
+    // 3. clock update with immediate effect, if there is a change in the clock source or prescaler
+    if (used_clk != last_used_clk) 
+    {
+        MCPWM0.clk_cfg.clk_prescale = target_prescaler;
+        last_used_clk = used_clk;
+        MCPWM0.update_cfg.global_force_up = 1;
+        MCPWM0.update_cfg.global_force_up = 0;
+    }
+
+    // 4. reanimation if stopped due to low speed
+    if (MCPWM0.timer[0].timer_cfg1.timer_start == 0 && speed_u32 >= MINIMUM_PULSE_FREQUENCY_U32) 
+    {
+        MCPWM0.timer[0].timer_cfg1.timer_start = 2; 
+        isRunning_b = true;
+    }
+
+    // 5. Calculate the timer period for the new speed and update the MCPWM registers
+    uint32_t effectiveSpeed = (speed_u32 < MINIMUM_PULSE_FREQUENCY_U32) ? MINIMUM_PULSE_FREQUENCY_U32 : speed_u32;
+    uint32_t period = used_clk / effectiveSpeed;
+    if (period > 0) period--; 
+
+    // direct register manipulation for immediate update of the timer period without waiting for the end of the current PWM cycle
+    MCPWM0.timer[0].timer_cfg0.timer_period_upmethod = 0; // Immediate
+    MCPWM0.timer[0].timer_cfg0.timer_period = (uint32_t)(period & 0xFFFF);
+
+    uint32_t compare = (period + 1) / 2;
+    MCPWM0.operators[0].gen_stmp_cfg.gen_a_upmethod = 0; 
+    MCPWM0.operators[0].timestamp[0].gen = (uint32_t)(compare & 0xFFFF);
+
+    // 6. force stop logic for very low speeds to prevent stalling, with automatic reanimation when speed is increased again
+    if (speed_u32 < MINIMUM_PULSE_FREQUENCY_U32) 
+    {
+        MCPWM0.operators[0].gen_force.gen_a_cntuforce_mode = 1; 
+    } 
+    else 
+    {
+        MCPWM0.operators[0].gen_force.gen_a_cntuforce_mode = 0; 
+    }
+
+    MCPWM0.update_cfg.global_force_up = 1;
+    MCPWM0.update_cfg.global_force_up = 0;
+}
+
+void IRAM_ATTR FastNonAccelStepper::moveToWithSpeed(int32_t targetPos_i32, uint32_t speed_u32)
+{
+    int32_t currentPos_i32 = getCurrentPosition();
+    int32_t stepsToMove_i32 = targetPos_i32 - currentPos_i32;
+    
+    // Richtung bestimmen
+    bool forward = (stepsToMove_i32 >= 0);
+    uint8_t targetDirLevel = forward ? dirLevelForward_b : dirLevelBackward_b;
+
+    int32_t absStepsToMove_i32 = abs(stepsToMove_i32);
+
+    // compute the number of wraps
+    int32_t numbWraps_i32 = absStepsToMove_i32 / PCNT_MIN_MAX_THRESHOLD;
+
+    // divide into equally spaced bursts, e.g. when 
+    // if absStepsToMove is < PCNT_MIN_MAX_THRESHOLD --> numbWraps = 0 and limit_i16 = absStepsToMove
+    // if absStepsToMove == PCNT_MIN_MAX_THRESHOLD --> numbWraps = 1 and limit_i16 = absStepsToMove/2
+    // if absStepsToMove == 2*PCNT_MIN_MAX_THRESHOLD --> numbWraps = 2 and limit_i16 = absStepsToMove/3
+    // if absStepsToMove > PCNT_MIN_MAX_THRESHOLD --> numbWraps >= 1
+    int32_t limit_i32 = absStepsToMove_i32 / (numbWraps_i32 + 1);
+    int16_t limit_i16 = constrain(limit_i32, 0, PCNT_MIN_MAX_THRESHOLD);
+
+    // the highLimit | lowLimit will be hit numbWraps, before stopping the PWM output
+    int16_t highLimit_i16;
+    int16_t lowLimit_i16;
+
+    // 1) set DIR pin
+    // 2) define upper limit for control pcnt
+    // 3) define lower limit for control pcnt
+    if (stepsToMove_i32 > 0)
+    {
+        digitalWrite(dirPin_u8, dirLevelForward_b);
+        highLimit_i16 = limit_i16;
+        lowLimit_i16 = -MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP;
+        overflowCountControl_i32 = numbWraps_i32;
+    }
+    else
+    {
+        digitalWrite(dirPin_u8, dirLevelBackward_b);
+        highLimit_i16 = MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP;
+        lowLimit_i16 = -limit_i16;
+        overflowCountControl_i32 = numbWraps_i32;
+    }
+
+    // parameterize control pcnt
+    pcnt_counter_pause(PCNT_UNIT_1);
+    pcnt_counter_clear(PCNT_UNIT_1);
+    pcnt_set_event_value(PCNT_UNIT_1, PCNT_EVT_H_LIM, highLimit_i16);
+    pcnt_set_event_value(PCNT_UNIT_1, PCNT_EVT_L_LIM, lowLimit_i16);
+    pcnt_event_enable(PCNT_UNIT_1, PCNT_EVT_H_LIM);
+    pcnt_event_enable(PCNT_UNIT_1, PCNT_EVT_L_LIM);
+    pcnt_counter_clear(PCNT_UNIT_1);
+    pcnt_counter_resume(PCNT_UNIT_1);
+
+    // Setze das Hardware-Limit für UNIT 1 als Sicherheitsfangnetz
+    // Wir setzen es immer ein Stück weiter als das aktuelle Ziel
+    //int16_t safetyLimit = (int16_t)constrain(abs(stepsToMove_i32) + 100, 0, PCNT_MIN_MAX_THRESHOLD);
+    //pcnt_set_event_value(PCNT_UNIT_1, forward ? PCNT_EVT_H_LIM : PCNT_EVT_L_LIM, safetyLimit);
+
+    // Geschwindigkeit ohne Ruckler anpassen
+    setSpeedLive(speed_u32);
+
+    if (!isRunning_b && speed_u32 > 10) {
+        isRunning_b = true;
+        mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);
+    }
 }

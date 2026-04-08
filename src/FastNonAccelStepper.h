@@ -17,6 +17,8 @@ public:
      */
     FastNonAccelStepper(uint8_t stepPin_u8, uint8_t dirPin_u8, bool invertMotorDir_b);
 
+
+    void begin(int timerGroup_i32 = 0);
     /**
      * @brief Set the maximum speed of the stepper motor.
      * @param speed_u32 Maximum speed in Hz.
@@ -27,7 +29,7 @@ public:
      * @brief Get the maximum speed of the stepper motor.
      * @return Maximum speed in Hz.
      */
-    uint32_t getMaxSpeed(void);
+    int32_t getMaxSpeed(void);
 
     /**
      * @brief Update the target position for the stepper motor.
@@ -98,7 +100,9 @@ public:
     int32_t getPositionAfterCommandsCompleted();
 
 
-    
+    void IRAM_ATTR setSpeedLive(uint32_t speed_u32);
+    void IRAM_ATTR setExpectedCycleTimeUs(uint32_t cycleTimeUs_u32);
+    void IRAM_ATTR moveToWithSpeed(int32_t targetPos_i32, uint32_t speed_u32);
 
 private:
     FastNonAccelStepper* stepper_p;
@@ -157,6 +161,7 @@ private:
      */
     void begin(uint8_t stepPin_u8, uint8_t dirPin_u8, bool invertMotorDir_b);
 
+    volatile uint32_t expectedCycleTimeUs_u32;
 
 };
 
