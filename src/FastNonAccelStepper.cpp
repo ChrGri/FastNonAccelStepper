@@ -13,7 +13,6 @@
 #define PWM_DUTY_CYCLE 50.0f
 #define PCNT_MIN_MAX_THRESHOLD (int16_t)32767 // INT16_MAX = (2^15)-1 = 32767
 #define POSITION_TRIGGER_THRESHOLD 1
-#define PCNT_FILTER_VALUE 1
 #define MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP 50
 
 //#define TIMER_RESOLUTION_IN_HZ_U32 10000000
@@ -26,11 +25,19 @@
 #define MINIMUM_PULSE_FREQUENCY_U32 (uint32_t)(TIMER_RESOLUTION_IN_HZ_U32 / UINT16_MAX + 1u)
 
 
+// Defines the margin (in Hz) that the filter should be set above the maximum speed
+#define PCNT_FILTER_MARGIN_HZ 5000
+
+// Dynamic calculation of the filter value (80MHz APB clock / 2 for 50% duty cycle)
+// The integer division automatically rounds down, which slightly increases the margin on the hardware side.
+#define PCNT_FILTER_VALUE (40000000 / (MAX_SPEED_IN_HZ + PCNT_FILTER_MARGIN_HZ))
+
+
 /************************************************************************/
 /*								Implementation							                          */
 /************************************************************************/
 FastNonAccelStepper::FastNonAccelStepper(uint8_t stepPin_u8, uint8_t dirPin_u8, bool invertMotorDir_b)
-    : stepPin_u8(stepPin_u8), dirPin_u8(dirPin_u8), targetPosition_i32(0), maxSpeed_u32(MAX_SPEED_IN_HZ), overflowCount_i32(0), pcntQueue(nullptr), invertMotorDirection_b(invertMotorDir_b), zeroPosition_i32(0)
+    : stepPin_u8(stepPin_u8), dirPin_u8(dirPin_u8), targetPosition_i32(0), max_u32(MAX__IN_HZ), overflowCount_i32(0), pcntQueue(nullptr), invertMotorDirection_b(invertMotorDir_b), zeroPosition_i32(0)
 {
     //stepper_p = this;  // Assign the current instance to stepper_p
     //stepper_p->begin(stepPin_u8, dirPin_u8, invertMotorDirection_b);
@@ -439,6 +446,9 @@ void IRAM_ATTR FastNonAccelStepper::setSpeedLive(uint32_t speed_u32)
     MCPWM0.update_cfg.global_up_en = 1;
     MCPWM0.update_cfg.op0_up_en = 1;
 
+	// constrain to allowed intervall
+	speed_u32 = constrain(speed_u32, 1, MAX_SPEED_IN_HZ);
+	
     // write to variable that tracks the max speed (for later retrieval and for use in moveToWithSpeed)
     maxSpeed_u32 = speed_u32;
 
