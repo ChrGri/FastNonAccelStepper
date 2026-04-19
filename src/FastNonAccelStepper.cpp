@@ -537,6 +537,13 @@ void IRAM_ATTR FastNonAccelStepper::moveToWithSpeed(int32_t targetPos_i32, uint3
 {
     int32_t currentPos_i32 = getCurrentPosition();
     int32_t stepsToMove_i32 = targetPos_i32 - currentPos_i32;
+
+    // --- DEADBAND: The most crucial protection for your admittance model ---
+    // If we are at the target (or just oscillating by 1 step), we abort immediately.
+    // The hardware remains untouched and generates no false pulses!
+    if (abs(stepsToMove_i32) <= 1) {
+        return; 
+    }
     
     // Determine direction
     bool forward = (stepsToMove_i32 >= 0);
