@@ -116,6 +116,7 @@ private:
     int32_t zeroPosition_i32 = 0;
     bool isRunning_b = false;
     bool invertMotorDirection_b = false;
+    bool currentDirState_b = false; // Member variable to track the DIR pin state without reading the hardware GPIO
 
     // Variable to store the DIR pin logic
     bool dirLevelForward_b = true;

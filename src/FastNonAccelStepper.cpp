@@ -73,6 +73,9 @@ void FastNonAccelStepper::begin(int timerGroup_i32)
     digitalWrite(stepPin_u8, LOW);
     digitalWrite(dirPin_u8, LOW);
 
+    // Keep internal state variable in sync with hardware pin
+    currentDirState_b = LOW;
+
     // configure pin modes
     mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0A, stepPin_u8);
 
@@ -100,7 +103,9 @@ void IRAM_ATTR FastNonAccelStepper::setMaxSpeed(uint32_t speed_u32)
 int32_t IRAM_ATTR FastNonAccelStepper::getMaxSpeed(void)
 {
     // 1. Read direction pin to determine the current direction of movement, which indicates whether the speed is positive (forward) or negative (backward)
-    bool currentDir = digitalRead(dirPin_u8);
+    //bool currentDir = digitalRead(dirPin_u8);
+    // Using the tracked internal state variable instead
+    bool currentDir = currentDirState_b;
     
     // 2. Check if this state corresponds to your defined forward direction
     if (currentDir == dirLevelForward_b)
@@ -162,6 +167,8 @@ void IRAM_ATTR FastNonAccelStepper::move(int32_t stepsToMove_i32, bool blocking_
         if (stepsToMove_i32 > 0)
         {
             digitalWrite(dirPin_u8, dirLevelForward_b);
+            currentDirState_b = dirLevelForward_b; // Keep internal state in sync
+
             highLimit_i16 = limit_i16;
             lowLimit_i16 = -MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP;
             overflowCountControl_i32 = numbWraps_i32;
@@ -169,6 +176,8 @@ void IRAM_ATTR FastNonAccelStepper::move(int32_t stepsToMove_i32, bool blocking_
         else
         {
             digitalWrite(dirPin_u8, dirLevelBackward_b);
+            currentDirState_b = dirLevelBackward_b; // Keep internal state in sync
+
             highLimit_i16 = MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP;
             lowLimit_i16 = -limit_i16;
             overflowCountControl_i32 = numbWraps_i32;
@@ -394,10 +403,12 @@ void IRAM_ATTR FastNonAccelStepper::keepRunningInDir(bool forwardDir_b, uint32_t
 	if (forwardDir_b)
     {
         digitalWrite(dirPin_u8, dirLevelForward_b);
+        currentDirState_b = dirLevelForward_b; // Keep internal state in sync
     }
     else
     {
         digitalWrite(dirPin_u8, dirLevelBackward_b);
+        currentDirState_b = dirLevelBackward_b; // Keep internal state in sync
     }
 
     pcnt_counter_pause(PCNT_UNIT_1);
@@ -491,11 +502,11 @@ void IRAM_ATTR FastNonAccelStepper::setSpeedLive(uint32_t speed_u32)
     if (period > 0) period--; 
 
     // direct register manipulation for immediate update of the timer period without waiting for the end of the current PWM cycle
-    MCPWM0.timer[0].timer_cfg0.timer_period_upmethod = 0; // Immediate
+    MCPWM0.timer[0].timer_cfg0.timer_period_upmethod = 1;
     MCPWM0.timer[0].timer_cfg0.timer_period = (uint32_t)(period & 0xFFFF);
 
     uint32_t compare = (period + 1) / 2;
-    MCPWM0.operators[0].gen_stmp_cfg.gen_a_upmethod = 0; 
+    MCPWM0.operators[0].gen_stmp_cfg.gen_a_upmethod = 1; 
     MCPWM0.operators[0].timestamp[0].gen = (uint32_t)(compare & 0xFFFF);
 
     // 6. force stop logic for very low speeds to prevent stalling, with automatic reanimation when speed is increased again
@@ -544,16 +555,28 @@ void IRAM_ATTR FastNonAccelStepper::moveToWithSpeed(int32_t targetPos_i32, uint3
     if (stepsToMove_i32 > 0)
     {
         digitalWrite(dirPin_u8, dirLevelForward_b);
+        currentDirState_b = dirLevelForward_b; // Keep internal state in sync
+
         highLimit_i16 = limit_i16;
         lowLimit_i16 = -MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP;
         overflowCountControl_i32 = numbWraps_i32;
     }
-    else
+    else if (stepsToMove_i32 < 0)
     {
         digitalWrite(dirPin_u8, dirLevelBackward_b);
+        currentDirState_b = dirLevelBackward_b; // Keep internal state in sync
+
         highLimit_i16 = MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP;
         lowLimit_i16 = -limit_i16;
         overflowCountControl_i32 = numbWraps_i32;
+    }
+    else
+    {
+        //digitalWrite(dirPin_u8, dirLevelBackward_b);
+        // do not change previous direction
+        highLimit_i16 = MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP;
+        lowLimit_i16 = -MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP;
+        overflowCountControl_i32 = 0;
     }
 
     // parameterize control pcnt
