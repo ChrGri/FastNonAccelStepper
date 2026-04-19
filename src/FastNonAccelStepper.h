@@ -103,6 +103,8 @@ public:
     void IRAM_ATTR setSpeedLive(uint32_t speed_u32);
     void IRAM_ATTR setExpectedCycleTimeUs(uint32_t cycleTimeUs_u32);
     void IRAM_ATTR moveToWithSpeed(int32_t targetPos_i32, uint32_t speed_u32);
+    void IRAM_ATTR pauseOutput();
+    void IRAM_ATTR resumeOutput();
 
 private:
     FastNonAccelStepper* stepper_p;

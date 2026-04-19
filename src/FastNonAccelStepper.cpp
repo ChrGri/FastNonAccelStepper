@@ -447,6 +447,16 @@ void IRAM_ATTR FastNonAccelStepper::setExpectedCycleTimeUs(uint32_t cycleTimeUs_
     expectedCycleTimeUs_u32 = cycleTimeUs_u32;
 }
 
+void IRAM_ATTR FastNonAccelStepper::pauseOutput() {
+    // Pin sofort auf LOW zwingen, Timer läuft weiter
+    mcpwm_set_signal_low(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A);
+}
+
+void IRAM_ATTR FastNonAccelStepper::resumeOutput() {
+    // Pin wieder an den Timer übergeben
+    mcpwm_set_duty_type(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, MCPWM_DUTY_MODE_0);
+}
+
 void IRAM_ATTR FastNonAccelStepper::setSpeedLive(uint32_t speed_u32) 
 {
     static uint32_t last_used_clk = 0; 
@@ -528,9 +538,19 @@ void IRAM_ATTR FastNonAccelStepper::moveToWithSpeed(int32_t targetPos_i32, uint3
     int32_t currentPos_i32 = getCurrentPosition();
     int32_t stepsToMove_i32 = targetPos_i32 - currentPos_i32;
     
-    // Richtung bestimmen
+    // Determine direction
     bool forward = (stepsToMove_i32 >= 0);
     uint8_t targetDirLevel = forward ? dirLevelForward_b : dirLevelBackward_b;
+
+    // Check if a direction change is happening
+    bool directionChanged = (targetDirLevel != currentDirState_b);
+
+    if (directionChanged) {
+        // Force the PWM output LOW immediately to prevent ghost pulses during setup
+        //mcpwm_set_signal_low(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A);
+        pauseOutput();
+        delayMicroseconds(1); // Give hardware a tiny moment
+    }
 
     int32_t absStepsToMove_i32 = abs(stepsToMove_i32);
 
@@ -579,6 +599,11 @@ void IRAM_ATTR FastNonAccelStepper::moveToWithSpeed(int32_t targetPos_i32, uint3
         overflowCountControl_i32 = 0;
     }
 
+    if (directionChanged) {
+        // Setup time for stepper driver direction pin before new pulses arrive
+        delayMicroseconds(2); 
+    }
+
     // parameterize control pcnt
     pcnt_counter_pause(PCNT_UNIT_1);
     pcnt_counter_clear(PCNT_UNIT_1);
@@ -594,10 +619,15 @@ void IRAM_ATTR FastNonAccelStepper::moveToWithSpeed(int32_t targetPos_i32, uint3
     //int16_t safetyLimit = (int16_t)constrain(abs(stepsToMove_i32) + 100, 0, PCNT_MIN_MAX_THRESHOLD);
     //pcnt_set_event_value(PCNT_UNIT_1, forward ? PCNT_EVT_H_LIM : PCNT_EVT_L_LIM, safetyLimit);
 
-    // Geschwindigkeit ohne Ruckler anpassen
+    // Update speed without jitter
     setSpeedLive(speed_u32);
 
-    if (!isRunning_b && speed_u32 > 10) {
+    // Resume PWM output or start if it was completely stopped
+    if (directionChanged) {
+        // Resume the timer's control over the pin
+        //mcpwm_set_duty_type(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, MCPWM_DUTY_MODE_0);
+        resumeOutput();
+    } else if (!isRunning_b && speed_u32 > 10) {
         isRunning_b = true;
         mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);
     }
