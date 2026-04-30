@@ -470,7 +470,7 @@ void IRAM_ATTR FastNonAccelStepper::setSpeedLive(uint32_t speed_u32)
 	// constrain to allowed intervall
 	speed_u32 = constrain(speed_u32, 1, MAX_SPEED_IN_HZ);
 	
-    // write to variable that tracks the max speed (for later retrieval and for use in moveToWithSpeed)
+    // write to variable that tracks the max speed (for later retrieval and for use in )
     maxSpeed_u32 = speed_u32;
 
     // 2. clock selection (hysteresis implemented to prevent frequent switching around the threshold)
@@ -542,6 +542,7 @@ void IRAM_ATTR FastNonAccelStepper::moveToWithSpeed(int32_t targetPos_i32, uint3
     // If we are at the target (or just oscillating by 1 step), we abort immediately.
     // The hardware remains untouched and generates no false pulses!
     if (abs(stepsToMove_i32) <= 1) {
+		maxSpeed_u32 = 0; 
         return; 
     }
     
