@@ -542,7 +542,7 @@ void IRAM_ATTR FastNonAccelStepper::moveToWithSpeed(int32_t targetPos_i32, uint3
     // If we are at the target (or just oscillating by 1 step), we abort immediately.
     // The hardware remains untouched and generates no false pulses!
     if (abs(stepsToMove_i32) <= 1) {
-		maxSpeed_u32 = 0; 
+		// maxSpeed_u32 = 0; // Don't reset as this will scew up plots 
         return; 
     }
     
