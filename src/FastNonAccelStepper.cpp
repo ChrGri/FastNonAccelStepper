@@ -357,6 +357,7 @@ void IRAM_ATTR FastNonAccelStepper::controlPCNTISR(void* arg_p)
         if (instance_p->overflowCountControl_i32 < 1)
         {
             instance_p->forceStop();
+			instance_p->maxSpeed_u32 = 0; // set speed to 0 when target position has been reached
         }
         instance_p->overflowCountControl_i32--;
     }
