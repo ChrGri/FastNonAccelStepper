@@ -15,14 +15,20 @@
 #define POSITION_TRIGGER_THRESHOLD 1
 #define MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP 50
 
-//#define TIMER_RESOLUTION_IN_HZ_U32 10000000
-#define TIMER_RESOLUTION_IN_HZ_U32 160000000
-#define MCPWM_CLK_HIGH 160000000 // 160 MHz für hohe Präzision
-#define MCPWM_CLK_LOW    1000000 // 1 MHz für langsame Frequenzen
-#define MPCWM_PRESCALER_HIGH 0   // Kein Prescaler, volle 160 MHz
-#define MPCWM_PRESCALER_LOW  159
-#define SWITCH_THRESHOLD 2500    // Wechsel bei ca. 2,5 kHz
+// Fixed MCPWM timer clock: 160 MHz / (15 + 1) = 10 MHz. With the 16 bit period register this
+// covers 153 Hz ... 250 kHz without switching the clock (switching used to glitch the pulse
+// train around 2.5 kHz). Resolution: 0.5 % at 50 kHz, 2.5 % at 250 kHz.
+#define TIMER_RESOLUTION_IN_HZ_U32 10000000
+#define MCPWM_GROUP_PRESCALER_U8 15
 #define MINIMUM_PULSE_FREQUENCY_U32 (uint32_t)(TIMER_RESOLUTION_IN_HZ_U32 / UINT16_MAX + 1u)
+
+// Margin (timer ticks) between reading the timer counter and a forced register update
+#define FORCED_UPDATE_GUARD_TICKS 10
+
+// Direction reversal: minimum high time of a step pulse before it may be cut (> PCNT glitch
+// filter of ~2 us), and DIR setup time before the next step edge
+#define MIN_STEP_PULSE_HIGH_TIME_US 3
+#define DIR_SETUP_TIME_US 5
 
 
 // Defines the margin (in Hz) that the filter should be set above the maximum speed
@@ -261,9 +267,18 @@ void FastNonAccelStepper::initMCPWM()
 
     mcpwm_init(MCPWM_UNIT_0, MCPWM_TIMER_0, &pwmConfig);
 
-    // WICHTIG: Den Timer-internen Prescaler auf 0 zwingen, damit wir 
-    // mit dem vollen Takt (160MHz) arbeiten können.
+    // Fixed group clock (see TIMER_RESOLUTION_IN_HZ_U32) and no additional timer prescaler
+    MCPWM0.clk_cfg.clk_prescale = MCPWM_GROUP_PRESCALER_U8;
     MCPWM0.timer[0].timer_cfg0.timer_prescale = 0;
+
+    // Load period and compare at the end of a period (TEZ) by default, see setSpeedLive()
+    MCPWM0.timer[0].timer_cfg0.timer_period_upmethod = 1;
+    MCPWM0.operators[0].gen_stmp_cfg.gen_a_upmethod = 1;
+
+    // Continuous software force (low-speed output disable) takes effect immediately. Its reset
+    // default is "disable update", which only worked while every speed change forced a global
+    // register update.
+    MCPWM0.operators[0].gen_force.gen_cntuforce_upmethod = 0;
 }
 
 void FastNonAccelStepper::initPCNTMultiturn()
@@ -460,78 +475,97 @@ void IRAM_ATTR FastNonAccelStepper::resumeOutput() {
 
 void IRAM_ATTR FastNonAccelStepper::setSpeedLive(uint32_t speed_u32) 
 {
-    static uint32_t last_used_clk = 0; 
-    uint32_t used_clk;
-    uint32_t target_prescaler;
-
-    // 1. hardware preparation for speed change: update the timer settings with the new speed, before changing the clock source or prescaler
+    // 1. enable register updates
     MCPWM0.update_cfg.global_up_en = 1;
     MCPWM0.update_cfg.op0_up_en = 1;
 
 	// constrain to allowed intervall
 	speed_u32 = constrain(speed_u32, 1, MAX_SPEED_IN_HZ);
-	
+
     // write to variable that tracks the max speed (for later retrieval and for use in )
     maxSpeed_u32 = speed_u32;
 
-    // 2. clock selection (hysteresis implemented to prevent frequent switching around the threshold)
-    if (speed_u32 < (SWITCH_THRESHOLD - 100)) 
+    // forceStop() only commands "stop at the end of the period" (timer_start reads 0 at once),
+    // the timer is idle when additionally the counter has reached zero
+    bool stopCommanded_b = (MCPWM0.timer[0].timer_cfg1.timer_start == 0);
+
+    // 2. timer period and compare (end of the high phase) for the new speed
+    uint32_t effectiveSpeed = (speed_u32 < MINIMUM_PULSE_FREQUENCY_U32) ? MINIMUM_PULSE_FREQUENCY_U32 : speed_u32;
+    uint32_t period = TIMER_RESOLUTION_IN_HZ_U32 / effectiveSpeed;
+    if (period > 0) period--;
+    if (period > 0xFFFF) period = 0xFFFF;
+    uint32_t compare = (period + 1) / 2;
+
+    // 3. write the shadow registers; by default they are loaded at the end of the running period (TEZ)
+    MCPWM0.timer[0].timer_cfg0.timer_period_upmethod = 1;
+    MCPWM0.timer[0].timer_cfg0.timer_period = period;
+    MCPWM0.operators[0].gen_stmp_cfg.gen_a_upmethod = 1;
+    MCPWM0.operators[0].timestamp[0].gen = compare;
+
+    // 4. force stop logic for very low speeds to prevent stalling, with automatic reanimation when speed is increased again
+    if (speed_u32 < MINIMUM_PULSE_FREQUENCY_U32)
     {
-        used_clk = MCPWM_CLK_LOW;  
-        target_prescaler = MPCWM_PRESCALER_LOW; 
-    } 
-    else if (speed_u32 > (SWITCH_THRESHOLD + 100))
-    {
-        used_clk = MCPWM_CLK_HIGH; 
-        target_prescaler = MPCWM_PRESCALER_HIGH;  
+        MCPWM0.operators[0].gen_force.gen_a_cntuforce_mode = 1;
     }
     else
     {
-        used_clk = (last_used_clk == 0) ? MCPWM_CLK_HIGH : last_used_clk;
-        target_prescaler = (used_clk == MCPWM_CLK_HIGH) ? MPCWM_PRESCALER_HIGH : MPCWM_PRESCALER_LOW;
+        MCPWM0.operators[0].gen_force.gen_a_cntuforce_mode = 0;
     }
 
-    // 3. clock update with immediate effect, if there is a change in the clock source or prescaler
-    if (used_clk != last_used_clk) 
+    // 5. Load the new values immediately only when that cannot break the running period:
+    //    a) the timer is idle (stopped at the end of a period)
+    //    b) the counter is still before the new compare: the high phase ends at the new compare,
+    //       the period at the new period
+    //    c) the output is already low (counter past every compare value that may be active)
+    //       and the counter is still before the new period end
+    //    Otherwise they are loaded at the end of the current period. A forced update with the
+    //    counter already past the new period end would miss it (the 16 bit counter runs on and
+    //    wraps: long pulse gap), past the new compare while still high it would merge two pulses.
+    uint32_t counter_u32 = MCPWM0.timer[0].timer_status.timer_value;
+    bool timerIdle_b = stopCommanded_b && (counter_u32 == 0);
+    bool loadNow_b = timerIdle_b ||
+                     (counter_u32 + FORCED_UPDATE_GUARD_TICKS < compare) ||
+                     ((counter_u32 >= activeCompareMax_u16) && (counter_u32 + FORCED_UPDATE_GUARD_TICKS < period));
+    if (loadNow_b)
     {
-        MCPWM0.clk_cfg.clk_prescale = target_prescaler;
-        last_used_clk = used_clk;
-        MCPWM0.update_cfg.global_force_up = 1;
-        MCPWM0.update_cfg.global_force_up = 0;
+        // a toggle triggers one forced update of all active registers
+        MCPWM0.update_cfg.global_force_up = !MCPWM0.update_cfg.global_force_up;
+        activeCompareMax_u16 = (uint16_t)compare;
     }
-
-    // 4. reanimation if stopped due to low speed
-    if (MCPWM0.timer[0].timer_cfg1.timer_start == 0 && speed_u32 >= MINIMUM_PULSE_FREQUENCY_U32) 
+    else
     {
-        MCPWM0.timer[0].timer_cfg1.timer_start = 2; 
+        // until the end of the period either the old or the new compare is active
+        if (compare > activeCompareMax_u16) activeCompareMax_u16 = (uint16_t)compare;
+    }
+    lastCompare_u16 = (uint16_t)compare;
+
+    // 6. reanimation if stopped (after the registers hold the new speed)
+    if (stopCommanded_b && speed_u32 >= MINIMUM_PULSE_FREQUENCY_U32)
+    {
+        MCPWM0.timer[0].timer_cfg1.timer_start = 2;
         isRunning_b = true;
     }
+}
 
-    // 5. Calculate the timer period for the new speed and update the MCPWM registers
-    uint32_t effectiveSpeed = (speed_u32 < MINIMUM_PULSE_FREQUENCY_U32) ? MINIMUM_PULSE_FREQUENCY_U32 : speed_u32;
-    uint32_t period = used_clk / effectiveSpeed;
-    if (period > 0) period--; 
-
-    // direct register manipulation for immediate update of the timer period without waiting for the end of the current PWM cycle
-    MCPWM0.timer[0].timer_cfg0.timer_period_upmethod = 1;
-    MCPWM0.timer[0].timer_cfg0.timer_period = (uint32_t)(period & 0xFFFF);
-
-    uint32_t compare = (period + 1) / 2;
-    MCPWM0.operators[0].gen_stmp_cfg.gen_a_upmethod = 1; 
-    MCPWM0.operators[0].timestamp[0].gen = (uint32_t)(compare & 0xFFFF);
-
-    // 6. force stop logic for very low speeds to prevent stalling, with automatic reanimation when speed is increased again
-    if (speed_u32 < MINIMUM_PULSE_FREQUENCY_U32) 
+void IRAM_ATTR FastNonAccelStepper::waitForMinimumPulseWidth()
+{
+    if ((MCPWM0.timer[0].timer_cfg1.timer_start == 0) && (MCPWM0.timer[0].timer_status.timer_value == 0))
     {
-        MCPWM0.operators[0].gen_force.gen_a_cntuforce_mode = 1; 
-    } 
-    else 
-    {
-        MCPWM0.operators[0].gen_force.gen_a_cntuforce_mode = 0; 
+        return; // timer idle, no pulse running
     }
 
-    MCPWM0.update_cfg.global_force_up = 1;
-    MCPWM0.update_cfg.global_force_up = 0;
+    // The high phase starts at counter 0 (TEZ) and ends at the active compare value. Wait until
+    // the running pulse is at least MIN_STEP_PULSE_HIGH_TIME_US long (or already low). Bounded.
+    const uint32_t minHighTicks_u32 = MIN_STEP_PULSE_HIGH_TIME_US * (TIMER_RESOLUTION_IN_HZ_U32 / 1000000u);
+    uint32_t startUs_u32 = micros();
+    while ((micros() - startUs_u32) <= (MIN_STEP_PULSE_HIGH_TIME_US + 1))
+    {
+        uint32_t counter_u32 = MCPWM0.timer[0].timer_status.timer_value;
+        if ((counter_u32 >= minHighTicks_u32) || (counter_u32 >= activeCompareMax_u16))
+        {
+            return;
+        }
+    }
 }
 
 void IRAM_ATTR FastNonAccelStepper::moveToWithSpeed(int32_t targetPos_i32, uint32_t speed_u32)
@@ -555,8 +589,10 @@ void IRAM_ATTR FastNonAccelStepper::moveToWithSpeed(int32_t targetPos_i32, uint3
     bool directionChanged = (targetDirLevel != currentDirState_b);
 
     if (directionChanged) {
-        // Force the PWM output LOW immediately to prevent ghost pulses during setup
-        //mcpwm_set_signal_low(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A);
+        // Force the PWM output LOW to prevent ghost pulses during setup, but do not cut a
+        // running step pulse too short: a sliver would be counted by the servo but filtered
+        // by the PCNT (or vice versa) and ESP and servo position would drift apart.
+        waitForMinimumPulseWidth();
         pauseOutput();
         delayMicroseconds(1); // Give hardware a tiny moment
     }
@@ -610,7 +646,7 @@ void IRAM_ATTR FastNonAccelStepper::moveToWithSpeed(int32_t targetPos_i32, uint3
 
     if (directionChanged) {
         // Setup time for stepper driver direction pin before new pulses arrive
-        delayMicroseconds(2); 
+        delayMicroseconds(DIR_SETUP_TIME_US);
     }
 
     // parameterize control pcnt

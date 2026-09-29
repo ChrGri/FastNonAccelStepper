@@ -166,6 +166,16 @@ private:
 
     volatile uint32_t expectedCycleTimeUs_u32;
 
+    // Largest compare (end of the high phase) value that may currently be active in the
+    // MCPWM generator. Speed updates are loaded at the end of the current period (TEZ)
+    // unless an immediate update is safe, so the active value can lag the written one.
+    uint16_t activeCompareMax_u16 = 0;
+    uint16_t lastCompare_u16 = 0;
+
+    // Direction reversal: do not cut a running step pulse before it is long enough to be
+    // counted consistently by the PCNT (glitch filter) and the servo.
+    void IRAM_ATTR waitForMinimumPulseWidth();
+
 };
 
 #endif // FASTNONACCELSTEPPER_H
