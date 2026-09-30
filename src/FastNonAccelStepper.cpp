@@ -5,6 +5,13 @@
 #include "soc/mcpwm_struct.h"
 #include "soc/mcpwm_reg.h"
 
+// Direct PCNT register access for the per-cycle hot path (moveToWithSpeed, getCurrentPosition).
+// The legacy driver functions do the same register writes, but each call takes a spinlock and
+// checks its arguments; the pedal control loop calls this path 4000 times per second.
+#include "hal/pcnt_ll.h"
+#include "soc/pcnt_struct.h"
+static portMUX_TYPE s_pcntRegisterMux = portMUX_INITIALIZER_UNLOCKED;
+
 
 /************************************************************************/
 /*								Defines 								                              */
@@ -248,8 +255,8 @@ void IRAM_ATTR FastNonAccelStepper::moveTo(int32_t targetPos_i32, bool blocking_
 
 int32_t IRAM_ATTR FastNonAccelStepper::getCurrentPosition() const
 {
-    int16_t pulseCount_i16 = 0;
-    pcnt_get_counter_value(PCNT_UNIT_0, &pulseCount_i16);
+    // direct register read (same value as pcnt_get_counter_value, without the driver overhead)
+    int16_t pulseCount_i16 = (int16_t)pcnt_ll_get_count(&PCNT, PCNT_UNIT_0);
     return ((int32_t)overflowCount_i32 * (int32_t)PCNT_MIN_MAX_THRESHOLD) + (int32_t)pulseCount_i16 - zeroPosition_i32;
 }
 
@@ -617,9 +624,12 @@ void IRAM_ATTR FastNonAccelStepper::moveToWithSpeed(int32_t targetPos_i32, uint3
     // 1) set DIR pin
     // 2) define upper limit for control pcnt
     // 3) define lower limit for control pcnt
+    // (the DIR pin is only written when the direction actually changes)
     if (stepsToMove_i32 > 0)
     {
-        digitalWrite(dirPin_u8, dirLevelForward_b);
+        if (directionChanged) {
+            digitalWrite(dirPin_u8, dirLevelForward_b);
+        }
         currentDirState_b = dirLevelForward_b; // Keep internal state in sync
 
         highLimit_i16 = limit_i16;
@@ -628,7 +638,9 @@ void IRAM_ATTR FastNonAccelStepper::moveToWithSpeed(int32_t targetPos_i32, uint3
     }
     else if (stepsToMove_i32 < 0)
     {
-        digitalWrite(dirPin_u8, dirLevelBackward_b);
+        if (directionChanged) {
+            digitalWrite(dirPin_u8, dirLevelBackward_b);
+        }
         currentDirState_b = dirLevelBackward_b; // Keep internal state in sync
 
         highLimit_i16 = MCPWM_PCNT_MAX_ALLOWED_MOVEMENT_IN_OPPOSITE_DIR_TILL_STOP;
@@ -649,15 +661,20 @@ void IRAM_ATTR FastNonAccelStepper::moveToWithSpeed(int32_t targetPos_i32, uint3
         delayMicroseconds(DIR_SETUP_TIME_US);
     }
 
-    // parameterize control pcnt
-    pcnt_counter_pause(PCNT_UNIT_1);
-    pcnt_counter_clear(PCNT_UNIT_1);
-    pcnt_set_event_value(PCNT_UNIT_1, PCNT_EVT_H_LIM, highLimit_i16);
-    pcnt_set_event_value(PCNT_UNIT_1, PCNT_EVT_L_LIM, lowLimit_i16);
-    pcnt_event_enable(PCNT_UNIT_1, PCNT_EVT_H_LIM);
-    pcnt_event_enable(PCNT_UNIT_1, PCNT_EVT_L_LIM);
-    pcnt_counter_clear(PCNT_UNIT_1);
-    pcnt_counter_resume(PCNT_UNIT_1);
+    // parameterize control pcnt: same register sequence as the legacy driver calls
+    // (pause, clear, set limits, enable limit events, clear, resume), written directly.
+    // pause/clear/resume modify the control register shared by all PCNT units, hence the
+    // critical section (the driver used a spinlock per call for the same reason).
+    portENTER_CRITICAL_SAFE(&s_pcntRegisterMux);
+    pcnt_ll_stop_count(&PCNT, PCNT_UNIT_1);
+    pcnt_ll_clear_count(&PCNT, PCNT_UNIT_1);
+    pcnt_ll_set_high_limit_value(&PCNT, PCNT_UNIT_1, highLimit_i16);
+    pcnt_ll_set_low_limit_value(&PCNT, PCNT_UNIT_1, lowLimit_i16);
+    pcnt_ll_enable_high_limit_event(&PCNT, PCNT_UNIT_1, true);
+    pcnt_ll_enable_low_limit_event(&PCNT, PCNT_UNIT_1, true);
+    pcnt_ll_clear_count(&PCNT, PCNT_UNIT_1);
+    pcnt_ll_start_count(&PCNT, PCNT_UNIT_1);
+    portEXIT_CRITICAL_SAFE(&s_pcntRegisterMux);
 
     // Setze das Hardware-Limit für UNIT 1 als Sicherheitsfangnetz
     // Wir setzen es immer ein Stück weiter als das aktuelle Ziel
