@@ -1,9 +1,11 @@
 #include "FastNonAccelStepper.h"
 #include <driver/mcpwm.h>
 #include <driver/pcnt.h>
+#include <driver/gpio.h>
 
 #include "soc/mcpwm_struct.h"
 #include "soc/mcpwm_reg.h"
+#include "hal/misc.h" // HAL_FORCE_MODIFY_U32_REG_FIELD
 
 // Direct PCNT register access for the per-cycle hot path (moveToWithSpeed, getCurrentPosition).
 // The legacy driver functions do the same register writes, but each call takes a spinlock and
@@ -286,6 +288,12 @@ void FastNonAccelStepper::initMCPWM()
     // default is "disable update", which only worked while every speed change forced a global
     // register update.
     MCPWM0.operators[0].gen_force.gen_cntuforce_upmethod = 0;
+
+    // Software sync restarts the period at a direction change (restartPeriodWhilePaused()).
+    // No hardware sync source is selected, so only the software sync reloads the counter.
+    HAL_FORCE_MODIFY_U32_REG_FIELD(MCPWM0.timer[0].timer_sync, timer_phase, 0);
+    MCPWM0.timer[0].timer_sync.timer_phase_direction = 0;
+    MCPWM0.timer[0].timer_sync.timer_synci_en = 1;
 }
 
 void FastNonAccelStepper::initPCNTMultiturn()
@@ -471,13 +479,63 @@ void IRAM_ATTR FastNonAccelStepper::setExpectedCycleTimeUs(uint32_t cycleTimeUs_
 }
 
 void IRAM_ATTR FastNonAccelStepper::pauseOutput() {
-    // Pin sofort auf LOW zwingen, Timer läuft weiter
-    mcpwm_set_signal_low(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A);
+    // Force the pin LOW immediately (continuous software force), the timer keeps running.
+    // mcpwm_set_signal_low() is not suitable here: it only changes the generator actions for
+    // future events, so a pulse that is already high runs on until its compare event. At a
+    // direction change the DIR pin then switched in the middle of that pulse: its rising and
+    // falling edge saw different DIR levels, and a counter using the other edge than the PCNT
+    // (e.g. the servo) counted it in the opposite direction (2 steps offset per event,
+    // measured with a logic analyzer at 8 MS/s).
+    MCPWM0.operators[0].gen_force.gen_cntuforce_upmethod = 0; // take effect immediately
+    MCPWM0.operators[0].gen_force.gen_a_cntuforce_mode = 1;   // 1: continuously LOW
+    outputPaused_b = true;
+    forceReleasePending_b = false;
+
+    // make sure the pin is really low before the caller switches DIR (bounded, ~1 us)
+    uint32_t startUs_u32 = micros();
+    while ((gpio_get_level((gpio_num_t)stepPin_u8) != 0) && ((micros() - startUs_u32) < 3)) {
+    }
+}
+
+void IRAM_ATTR FastNonAccelStepper::restartPeriodWhilePaused() {
+    // Only valid while pauseOutput() holds the pin LOW: nothing can be cut or merged then.
+    // 1) load the period and compare written by setSpeedLive() immediately
+    MCPWM0.update_cfg.global_up_en = 1;
+    MCPWM0.update_cfg.op0_up_en = 1;
+    MCPWM0.update_cfg.global_force_up = !MCPWM0.update_cfg.global_force_up;
+    activeCompareMax_u16 = lastCompare_u16;
+    // 2) software sync: the counter restarts at phase 0 (start of the high phase)
+    HAL_FORCE_MODIFY_U32_REG_FIELD(MCPWM0.timer[0].timer_sync, timer_phase, 0);
+    MCPWM0.timer[0].timer_sync.timer_sync_sw = ~MCPWM0.timer[0].timer_sync.timer_sync_sw;
+    periodJustRestarted_b = true;
 }
 
 void IRAM_ATTR FastNonAccelStepper::resumeOutput() {
-    // Pin wieder an den Timer übergeben
-    mcpwm_set_duty_type(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, MCPWM_DUTY_MODE_0);
+    // Hand the pin back to the timer without cutting a sliver pulse: while the counter is in
+    // the high phase of the running period, releasing the force would raise the pin for only
+    // the rest of that phase. Release immediately only when the output would be low anyway
+    // (timer idle or counter past every active compare), otherwise at the end of the period
+    // (TEZ), where the next pulse starts with its full width.
+    // Right after restartPeriodWhilePaused() the counter is at the start of the high phase:
+    // releasing now gives a full-width pulse.
+    outputPaused_b = false;
+    uint32_t counter_u32 = MCPWM0.timer[0].timer_status.timer_value;
+    bool timerIdle_b = (MCPWM0.timer[0].timer_cfg1.timer_start == 0) && (counter_u32 == 0);
+    bool atPeriodStart_b = periodJustRestarted_b && (counter_u32 < FORCED_UPDATE_GUARD_TICKS);
+    periodJustRestarted_b = false;
+    if (timerIdle_b || atPeriodStart_b || (counter_u32 >= activeCompareMax_u16))
+    {
+        MCPWM0.operators[0].gen_force.gen_cntuforce_upmethod = 0;
+        MCPWM0.operators[0].gen_force.gen_a_cntuforce_mode = desiredForceMode_u8;
+        forceReleasePending_b = false;
+    }
+    else
+    {
+        MCPWM0.operators[0].gen_force.gen_cntuforce_upmethod = 1; // at TEZ
+        MCPWM0.operators[0].gen_force.gen_a_cntuforce_mode = desiredForceMode_u8;
+        forceReleasePending_b = true;
+        forceReleaseCounter_u16 = (uint16_t)counter_u32;
+    }
 }
 
 void IRAM_ATTR FastNonAccelStepper::setSpeedLive(uint32_t speed_u32) 
@@ -496,6 +554,18 @@ void IRAM_ATTR FastNonAccelStepper::setSpeedLive(uint32_t speed_u32)
     // the timer is idle when additionally the counter has reached zero
     bool stopCommanded_b = (MCPWM0.timer[0].timer_cfg1.timer_start == 0);
 
+    // A force release scheduled for the end of the period (resumeOutput) has taken effect once
+    // the counter wrapped (or the timer is idle); from then on force changes act immediately.
+    if (forceReleasePending_b)
+    {
+        uint32_t counterNow_u32 = MCPWM0.timer[0].timer_status.timer_value;
+        if ((stopCommanded_b && counterNow_u32 == 0) || (counterNow_u32 < forceReleaseCounter_u16))
+        {
+            forceReleasePending_b = false;
+            MCPWM0.operators[0].gen_force.gen_cntuforce_upmethod = 0;
+        }
+    }
+
     // 2. timer period and compare (end of the high phase) for the new speed
     uint32_t effectiveSpeed = (speed_u32 < MINIMUM_PULSE_FREQUENCY_U32) ? MINIMUM_PULSE_FREQUENCY_U32 : speed_u32;
     uint32_t period = TIMER_RESOLUTION_IN_HZ_U32 / effectiveSpeed;
@@ -510,13 +580,12 @@ void IRAM_ATTR FastNonAccelStepper::setSpeedLive(uint32_t speed_u32)
     MCPWM0.operators[0].timestamp[0].gen = compare;
 
     // 4. force stop logic for very low speeds to prevent stalling, with automatic reanimation when speed is increased again
-    if (speed_u32 < MINIMUM_PULSE_FREQUENCY_U32)
+    //    (while the output is paused for a direction change, only remember the mode:
+    //    resumeOutput() applies it)
+    desiredForceMode_u8 = (speed_u32 < MINIMUM_PULSE_FREQUENCY_U32) ? 1 : 0;
+    if (!outputPaused_b)
     {
-        MCPWM0.operators[0].gen_force.gen_a_cntuforce_mode = 1;
-    }
-    else
-    {
-        MCPWM0.operators[0].gen_force.gen_a_cntuforce_mode = 0;
+        MCPWM0.operators[0].gen_force.gen_a_cntuforce_mode = desiredForceMode_u8;
     }
 
     // 5. Load the new values immediately only when that cannot break the running period:
@@ -530,9 +599,12 @@ void IRAM_ATTR FastNonAccelStepper::setSpeedLive(uint32_t speed_u32)
     //    wraps: long pulse gap), past the new compare while still high it would merge two pulses.
     uint32_t counter_u32 = MCPWM0.timer[0].timer_status.timer_value;
     bool timerIdle_b = stopCommanded_b && (counter_u32 == 0);
+    //    Not while a force release waits for the end of the period: a forced update would apply
+    //    the release at once (sliver pulse).
     bool loadNow_b = timerIdle_b ||
-                     (counter_u32 + FORCED_UPDATE_GUARD_TICKS < compare) ||
-                     ((counter_u32 >= activeCompareMax_u16) && (counter_u32 + FORCED_UPDATE_GUARD_TICKS < period));
+                     (!forceReleasePending_b &&
+                      ((counter_u32 + FORCED_UPDATE_GUARD_TICKS < compare) ||
+                       ((counter_u32 >= activeCompareMax_u16) && (counter_u32 + FORCED_UPDATE_GUARD_TICKS < period))));
     if (loadNow_b)
     {
         // a toggle triggers one forced update of all active registers
@@ -681,14 +753,27 @@ void IRAM_ATTR FastNonAccelStepper::moveToWithSpeed(int32_t targetPos_i32, uint3
     //int16_t safetyLimit = (int16_t)constrain(abs(stepsToMove_i32) + 100, 0, PCNT_MIN_MAX_THRESHOLD);
     //pcnt_set_event_value(PCNT_UNIT_1, forward ? PCNT_EVT_H_LIM : PCNT_EVT_L_LIM, safetyLimit);
 
-    // Update speed without jitter
+    // Update speed without jitter and hand the pin back to the timer. With the timer idle the
+    // output is released first, so the (re)start begins with a full pulse; with the timer
+    // running resumeOutput() picks a release point that does not cut a pulse.
+    bool timerIdleAtResume_b = (MCPWM0.timer[0].timer_cfg1.timer_start == 0) &&
+                               (MCPWM0.timer[0].timer_status.timer_value == 0);
+    if (directionChanged && timerIdleAtResume_b) {
+        resumeOutput();
+    }
     setSpeedLive(speed_u32);
 
     // Resume PWM output or start if it was completely stopped
     if (directionChanged) {
-        // Resume the timer's control over the pin
-        //mcpwm_set_duty_type(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, MCPWM_DUTY_MODE_0);
-        resumeOutput();
+        if (!timerIdleAtResume_b) {
+            // The timer still runs with the period from before the reversal (up to 6.5 ms at
+            // the lowest speed). Waiting for its end delayed the first pulse in the new
+            // direction by up to that long. Instead, while the output is still forced LOW:
+            // load the new speed at once and restart the period, then hand the pin back at
+            // the start of the period, so the first pulse starts now with its full width.
+            restartPeriodWhilePaused();
+            resumeOutput();
+        }
     } else if (!isRunning_b && speed_u32 > 10) {
         isRunning_b = true;
         mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);

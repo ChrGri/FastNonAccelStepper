@@ -176,6 +176,20 @@ private:
     // counted consistently by the PCNT (glitch filter) and the servo.
     void IRAM_ATTR waitForMinimumPulseWidth();
 
+    // Continuous software force of the step output: 0 = timer controls the pin, 1 = LOW.
+    // desiredForceMode_u8 follows the speed (LOW below the minimum pulse frequency);
+    // while the output is paused for a direction change it is only applied on resume.
+    uint8_t desiredForceMode_u8 = 0;
+    bool outputPaused_b = false;
+    // force release scheduled for the end of the period (TEZ), see resumeOutput()
+    bool forceReleasePending_b = false;
+    uint16_t forceReleaseCounter_u16 = 0;
+
+    // Direction change with the timer running: load the new speed and restart the period while
+    // the output is forced LOW, so the first pulse in the new direction starts at once.
+    void IRAM_ATTR restartPeriodWhilePaused();
+    bool periodJustRestarted_b = false;
+
 };
 
 #endif // FASTNONACCELSTEPPER_H
